@@ -10,11 +10,11 @@ python -m venv venv
 Kích hoạt môi trường ảo:
 .\venv\Scripts\Activate.ps1
 
-Cài đặt các thư viện cần thiết
+Cài đặt các thư viện cần thiết:
 pip install -r requirements.txt
 
-Nạp dữ liệu linh kiện vào SQLite (nếu muốn cập nhật db mới nhất)
+Nạp dữ liệu linh kiện vào SQLite (nếu muốn cập nhật db mới nhất):
 python scripts/scraper.py
 
-Khởi động máy chủ Web
+Khởi động máy chủ Web:
 python -m uvicorn app.main:app --reload
