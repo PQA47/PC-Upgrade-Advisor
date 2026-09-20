@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PC Upgrade Advisor</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen py-10 px-4">
+  <div class="max-w-4xl mx-auto">
+
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
+      <div>
+        <h1 class="text-3xl font-extrabold text-cyan-400 tracking-tight">PC Upgrade Advisor</h1>
+        <p class="text-slate-400 text-sm mt-1">System for analyzing hardware configurations, identifying bottlenecks, and giving smart upgrade recommendations.</p>
+      </div>
+      <div class="flex items-center gap-3">
+        <a href="/api/sync-data" target="_blank"
+           class="text-xs bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700 px-3.5 py-2.5 rounded-xl transition flex items-center gap-2 shadow-sm">
+          <span>🔄</span> Sync PassMark data in background
+        </a>
+      </div>
+    </div>
+
+    <!-- Main form -->
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-2xl">
+      <form action="/analyze" method="POST" class="space-y-8">
+
+        <!-- SECTION 1: CURRENT HARDWARE CONFIGURATION -->
+        <div>
+          <div class="flex items-center gap-2 mb-4 pb-2 border-b border-slate-800">
+            <span class="w-6 h-6 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-xs font-bold">1</span>
+            <h2 class="text-lg font-semibold text-slate-200">Current hardware configuration (search-enabled)</h2>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <!-- CPU Search -->
+            <div>
+              <label class="block text-sm font-medium text-slate-300 mb-1.5">
+                Processor (CPU) <span class="text-xs text-cyan-400 font-normal">(Type chip model)</span>
+              </label>
+              <input list="cpu_list" name="cpu_name" placeholder="Try: i5-12400F, Ryzen 5 5600X, 14700K..." required autocomplete="off"
+                     class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition text-sm">
+              <datalist id="cpu_list">
+                {% for c in cpus %}
+                  <option value="{{ c.name }}">Socket: {{ c.socket }} | {{ c.cores }} cores | Score: {{ c.score }}</option>
+                {% endfor %}
+              </datalist>
+            </div>
+
+            <!-- Mainboard Search -->
+            <div>
+              <label class="block text-sm font-medium text-slate-300 mb-1.5">
+                Motherboard <span class="text-xs text-cyan-400 font-normal">(Type board model)</span>
+              </label>
+              <input list="mb_list" name="mb_name" placeholder="Try: B760, B550, Z790, Tomahawk, TUF..." required autocomplete="off"
+                     class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition text-sm">
+              <datalist id="mb_list">
+                {% for m in motherboards %}
+                  <option value="{{ m.name }}">Socket: {{ m.socket }} | RAM standard: {{ m.ram_type }}</option>
+                {% endfor %}
+              </datalist>
+            </div>
+
+            <!-- GPU Search -->
+            <div>
+              <label class="block text-sm font-medium text-slate-300 mb-1.5">
+                Graphics card (GPU) <span class="text-xs text-cyan-400 font-normal">(Type GPU model)</span>
+              </label>
+              <input list="gpu_list" name="gpu_name" placeholder="Try: RTX 3060, RTX 4070, RX 6600..." required autocomplete="off"
+                     class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition text-sm">
+              <datalist id="gpu_list">
+                {% for g in gpus %}
+                  <option value="{{ g.name }}">{{ g.vram }}GB VRAM | TDP {{ g.tdp }}W | Score: {{ g.score }}</option>
+                {% endfor %}
+              </datalist>
+            </div>
+
+            <!-- PSU power -->
+            <div>
+              <label class="block text-sm font-medium text-slate-300 mb-1.5">Current PSU wattage</label>
+              <input type="number" name="psu_watt" value="550" min="200" max="2500" step="50" required
+                     class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-slate-100 focus:outline-none focus:border-cyan-500 transition text-sm">
+            </div>
+
+            <!-- RAM size -->
+            <div>
+              <label class="block text-sm font-medium text-slate-300 mb-1.5">System RAM size</label>
+              <select name="ram_gb" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-slate-100 focus:outline-none focus:border-cyan-500 transition text-sm">
+                <option value="8">8 GB (Basic / Office)</option>
+                <option value="16" selected>16 GB (Standard gaming / multitasking)</option>
+                <option value="32">32 GB (Heavy graphics / AI / programming)</option>
+                <option value="64">64 GB (Workstation / large data)</option>
+              </select>
+            </div>
+
+            <!-- Main storage -->
+            <div>
+              <label class="block text-sm font-medium text-slate-300 mb-1.5">Primary storage drive</label>
+              <select name="storage_type" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-slate-100 focus:outline-none focus:border-cyan-500 transition text-sm">
+                <option value="NVMe SSD" selected>NVMe M.2 SSD (High speed)</option>
+                <option value="SATA SSD">SATA SSD (Medium speed)</option>
+                <option value="HDD">Mechanical HDD (Very slow)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION 2: USAGE & WORKLOAD -->
+        <div>
+          <div class="flex items-center gap-2 mb-4 pb-2 border-b border-slate-800">
+            <span class="w-6 h-6 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-xs font-bold">2</span>
+            <h2 class="text-lg font-semibold text-slate-200">Work environment & usage requirements</h2>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <!-- Screen resolution -->
+            <div>
+              <label class="block text-sm font-medium text-slate-300 mb-1.5">Main display resolution</label>
+              <select name="resolution" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-slate-100 focus:outline-none focus:border-cyan-500 transition text-sm">
+                <option value="1080p" selected>Full HD (1920 × 1080)</option>
+                <option value="1440p">2K QHD (2560 × 1440)</option>
+                <option value="4k">4K UHD (3840 × 2160)</option>
+              </select>
+            </div>
+
+            <!-- Main workload -->
+            <div>
+              <label class="block text-sm font-medium text-slate-300 mb-1.5">Primary use case</label>
+              <select name="usage" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-slate-100 focus:outline-none focus:border-cyan-500 transition text-sm">
+                <option value="gaming" selected>Gaming (AAA / eSports)</option>
+                <option value="ai">AI / Deep Learning / Machine Learning</option>
+                <option value="programming">Programming / Docker / Virtual machines</option>
+                <option value="editing">Graphics / Video rendering (Premiere, After Effects)</option>
+                <option value="office">Office work & everyday tasks</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Submit button -->
+        <div>
+          <button type="submit"
+                  class="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold py-4 px-6 rounded-xl shadow-lg shadow-cyan-950/50 transition-all duration-200 active:scale-[0.99] flex items-center justify-center gap-2">
+            <span>⚡</span>
+            <span>Analyze configuration & provide upgrade guidance</span>
+          </button>
+        </div>
+
+      </form>
+    </div>
+
+    <!-- Footer -->
+    <div class="text-center text-xs text-slate-500 mt-8">
+      Data is continuously synced and benchmarked using PassMark / Geekbench standards.
+    </div>
+
+  </div>
+</body>
+</html>
