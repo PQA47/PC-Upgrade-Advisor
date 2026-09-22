@@ -1,420 +1,172 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PC Upgrade Advisory Report</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PC Upgrade Advisor - Results</title>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
+<body class="bg-slate-950 text-slate-100 min-h-screen">
+<div class="max-w-6xl mx-auto px-4 py-8">
 
-<body class="bg-slate-950 text-slate-100 min-h-screen py-10 px-4">
-  <div class="max-w-4xl mx-auto space-y-6">
-
-    <!-- Header -->
-    <div class="flex items-center justify-between">
-      <h1 class="text-2xl font-extrabold text-cyan-400">
-        Assessment & Upgrade Advisory Report
-      </h1>
-
-      <a href="/"
-         class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300
-                border border-slate-700 px-3.5 py-2 rounded-xl transition">
-        ← Try another configuration
-      </a>
+    <div class="mb-8">
+        <a href="/" class="text-cyan-400 hover:text-cyan-300 text-sm">← Back to advisor</a>
+        <h1 class="text-3xl font-bold mt-3">PC Upgrade Analysis</h1>
+        <p class="text-slate-400 mt-1">Recommended components now include pricing information when available.</p>
     </div>
 
-    <!-- Active configuration summary -->
-    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 text-sm
-                grid grid-cols-2 md:grid-cols-4 gap-4 shadow-lg">
-
-      <div>
-        <span class="text-xs text-slate-400 block">Processor (CPU)</span>
-        <span class="font-semibold text-slate-200">{{ cpu.name }}</span>
-      </div>
-
-      <div>
-        <span class="text-xs text-slate-400 block">Graphics card (GPU)</span>
-        <span class="font-semibold text-slate-200">
-          {{ gpu.name }} ({{ gpu.vram }}GB)
-        </span>
-      </div>
-
-      <div>
-        <span class="text-xs text-slate-400 block">Motherboard & PSU</span>
-        <span class="font-semibold text-slate-200">
-          {{ mb.socket }} | {{ psu_watt }}W
-        </span>
-      </div>
-
-      <div>
-        <span class="text-xs text-slate-400 block">RAM & storage</span>
-        <span class="font-semibold text-slate-200">
-          {{ ram_gb }}GB | {{ storage_type }}
-        </span>
-      </div>
-    </div>
-
-
-    <!-- ========================================================= -->
-    <!-- HARDWARE COMPATIBILITY ERROR                              -->
-    <!-- ========================================================= -->
-
-    {% if not compat.is_compatible %}
-
-    <div class="p-6 rounded-2xl border bg-rose-950/20 border-rose-500/50 shadow-xl">
-
-      <div class="flex items-center gap-2 mb-4">
-        <span class="text-rose-400 text-xl">✗</span>
-
-        <span class="text-xs font-bold uppercase tracking-wider px-2.5 py-1
-                     rounded-full bg-rose-500/20 text-rose-300
-                     border border-rose-500/30">
-          Hardware Compatibility Error
-        </span>
-      </div>
-
-      <h2 class="text-2xl font-black text-rose-400 mb-2">
-        Incompatible Components
-      </h2>
-
-      <p class="text-slate-300 text-sm mb-5">
-        The selected components cannot work together.
-        Please fix the hardware compatibility issues before checking for upgrades.
-      </p>
-
-      <div class="bg-slate-900/80 rounded-xl p-4 border border-rose-500/30 space-y-3">
-
-        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block">
-          Detected hardware issues
-        </span>
-
-        {% for issue in compat.issues %}
-        <div class="flex items-start gap-2 text-rose-300 text-sm">
-          <span class="text-rose-400">⚠</span>
-          <p>{{ issue }}</p>
+    <!-- Current configuration -->
+    <section class="bg-slate-900 border border-slate-800 rounded-2xl p-6 mb-6">
+        <h2 class="text-lg font-bold mb-4">Current configuration</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+            <div class="bg-slate-800/60 rounded-xl p-4"><span class="text-slate-400">CPU</span><div class="font-semibold mt-1">{{ cpu.name }}</div></div>
+            <div class="bg-slate-800/60 rounded-xl p-4"><span class="text-slate-400">GPU</span><div class="font-semibold mt-1">{{ gpu.name }}</div></div>
+            <div class="bg-slate-800/60 rounded-xl p-4"><span class="text-slate-400">Motherboard</span><div class="font-semibold mt-1">{{ mb.name }}</div></div>
+            <div class="bg-slate-800/60 rounded-xl p-4"><span class="text-slate-400">RAM</span><div class="font-semibold mt-1">{{ ram_gb }} GB</div></div>
+            <div class="bg-slate-800/60 rounded-xl p-4"><span class="text-slate-400">Storage</span><div class="font-semibold mt-1">{{ storage_type }}</div></div>
+            <div class="bg-slate-800/60 rounded-xl p-4"><span class="text-slate-400">Budget</span><div class="font-semibold mt-1">{{ "{:,.0f}".format(budget) }} VND</div></div>
         </div>
-        {% endfor %}
+    </section>
 
-      </div>
-
-      <div class="mt-5">
-        <a href="/"
-           class="block w-full text-center bg-rose-600 hover:bg-rose-500
-                  text-white font-bold py-3.5 rounded-xl transition
-                  shadow-lg shadow-rose-950/40">
-          Fix my configuration
-        </a>
-      </div>
-
-    </div>
-
-    {% else %}
-
-
-    <!-- ========================================================= -->
-    <!-- COMPATIBLE CONFIGURATION: UPGRADE ANALYSIS                -->
-    <!-- ========================================================= -->
-
-    <!-- Advisory conclusion -->
-    <div class="p-6 rounded-2xl border
-                {% if decision.verdict_needed %}
-                  bg-amber-950/30 border-amber-500/50
-                {% else %}
-                  bg-emerald-950/30 border-emerald-500/50
-                {% endif %}
-                shadow-xl">
-
-      <div class="flex items-center justify-between mb-3">
-
-        <span class="text-xs font-bold uppercase tracking-wider px-2.5 py-1
-                     rounded-full
-                     {% if decision.verdict_needed %}
-                       bg-amber-500/20 text-amber-300 border border-amber-500/30
-                     {% else %}
-                       bg-emerald-500/20 text-emerald-300 border border-emerald-500/30
-                     {% endif %}">
-          Conclusion
-        </span>
-
-        <span class="text-xs text-slate-400 font-mono">
-          Task: {{ usage|upper }} | Display: {{ resolution }}
-        </span>
-      </div>
-
-      <h2 class="text-2xl font-black mb-1
-                 {% if decision.verdict_needed %}
-                   text-amber-400
-                 {% else %}
-                   text-emerald-400
-                 {% endif %}">
-        {{ decision.verdict_title }}
-      </h2>
-
-      <p class="text-slate-300 text-sm mb-4">
-        {{ decision.verdict_summary }}
-      </p>
-
-      {% if decision.reasons %}
-      <div class="bg-slate-900/80 rounded-xl p-4 border border-slate-800
-                  space-y-2 text-sm text-slate-200">
-
-        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">
-          Detailed warnings:
-        </span>
-
-        {% for r in decision.reasons %}
-        <p>{{ r }}</p>
-        {% endfor %}
-
-      </div>
-      {% endif %}
-
-    </div>
-
-
-    <!-- Recommended upgrade plan -->
-    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6
-                shadow-xl space-y-6">
-
-      <div class="flex items-center gap-2 pb-2 border-b border-slate-800">
-        <span class="text-cyan-400 text-xl">💡</span>
-        <h3 class="text-lg font-bold text-slate-100">
-          Recommended upgrade plan
-        </h3>
-      </div>
-
-
-      <!-- RAM / Storage -->
-      {% if recomms.storage_recommendation or recomms.ram_recommendation %}
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-        {% if recomms.storage_recommendation %}
-        <div class="bg-slate-800/60 border border-slate-700/80 p-4 rounded-xl">
-
-          <span class="text-xs font-bold text-cyan-400 block mb-1">
-            Storage
-          </span>
-
-          <h4 class="font-bold text-slate-100 text-sm">
-            {{ recomms.storage_recommendation.title }}
-          </h4>
-
-          <p class="text-xs text-slate-400 mt-1">
-            {{ recomms.storage_recommendation.reason }}
-          </p>
-
-        </div>
+    <!-- Compatibility -->
+    <section class="rounded-2xl p-6 mb-6 border {% if compat.hardware_compatible %}border-emerald-500/30 bg-emerald-500/5{% else %}border-red-500/40 bg-red-500/5{% endif %}">
+        {% if compat.hardware_compatible %}
+            <h2 class="text-lg font-bold text-emerald-400">✓ Hardware is compatible</h2>
+            {% if not compat.psu_ok %}
+                <p class="text-amber-400 mt-2">⚠ PSU warning: {{ compat.recommended_psu }}W or more is recommended.</p>
+            {% else %}
+                <p class="text-slate-300 mt-2">CPU socket and motherboard socket are compatible, and the PSU meets the estimated requirement.</p>
+            {% endif %}
+        {% else %}
+            <h2 class="text-lg font-bold text-red-400">✕ Hardware compatibility issue</h2>
+            <ul class="mt-3 space-y-1 text-red-300 text-sm">
+                {% for issue in compat.issues %}<li>• {{ issue }}</li>{% endfor %}
+            </ul>
         {% endif %}
+    </section>
 
+    {% if compat.hardware_compatible %}
+    <!-- Price summary -->
+    <section class="bg-slate-900 border border-cyan-500/20 rounded-2xl p-6 mb-8">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <div>
+                <h2 class="text-lg font-bold">Estimated upgrade cost</h2>
+                <p class="text-xs text-slate-400 mt-1">The total uses prices available for the displayed recommendations.</p>
+            </div>
+            <div class="text-2xl font-bold text-cyan-400">
+                {{ "{:,.0f}".format(recomms.total_known_price) }} VND
+            </div>
+        </div>
+        {% if not recomms.total_price_complete %}
+            <p class="text-xs text-amber-400 mt-3">⚠ Some CPU/GPU prices are unavailable in the database, so the total is incomplete.</p>
+        {% endif %}
+        {% if budget > 0 %}
+            <p class="text-xs mt-2 {% if recomms.total_known_price <= budget %}text-emerald-400{% else %}text-amber-400{% endif %}">
+                Budget: {{ "{:,.0f}".format(budget) }} VND
+                {% if recomms.total_known_price <= budget %}· Current known-price total is within budget.{% else %}· Current known-price total exceeds the budget.{% endif %}
+            </p>
+        {% endif %}
+    </section>
 
+    <section class="bg-slate-900 border border-slate-800 rounded-2xl p-6 mb-6">
+        <h2 class="text-xl font-bold mb-6">Recommended upgrade plan</h2>
+
+        <!-- RAM -->
         {% if recomms.ram_recommendation %}
-        <div class="bg-slate-800/60 border border-slate-700/80 p-4 rounded-xl">
-
-          <span class="text-xs font-bold text-cyan-400 block mb-1">
-            RAM
-          </span>
-
-          <h4 class="font-bold text-slate-100 text-sm">
-            {{ recomms.ram_recommendation.title }}
-          </h4>
-
-          <p class="text-xs text-slate-400 mt-1">
-            {{ recomms.ram_recommendation.reason }}
-          </p>
-
+        <div class="mb-7">
+            <h3 class="text-sm font-bold uppercase tracking-wider text-slate-300 mb-3">RAM</h3>
+            <div class="bg-slate-800/50 border border-slate-700 rounded-xl p-4">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                    <div>
+                        <h4 class="font-bold">{{ recomms.ram_recommendation.title }}</h4>
+                        <p class="text-sm text-slate-400 mt-1">{{ recomms.ram_recommendation.reason }}</p>
+                    </div>
+                    <div class="text-cyan-400 font-bold whitespace-nowrap">{{ recomms.ram_recommendation.price_label }}</div>
+                </div>
+                <p class="text-xs text-slate-500 mt-2">Estimated market price — RAM pricing is not currently stored in the hardware database.</p>
+            </div>
         </div>
         {% endif %}
 
-      </div>
-      {% endif %}
-
-
-      <!-- GPU suggestion -->
-      <div>
-
-        <h4 class="text-sm font-bold text-slate-300 uppercase tracking-wider mb-3">
-          Recommended graphics card upgrade (for {{ resolution }})
-        </h4>
-
-        {% if recomms.gpu_upgrades %}
-
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-
-          {% for g in recomms.gpu_upgrades %}
-
-          <div class="bg-slate-800/40 border border-slate-700 rounded-xl p-4
-                      flex flex-col justify-between hover:border-cyan-500/50 transition">
-
-            <div>
-
-              <div class="flex items-center justify-between mb-1">
-
-                <span class="text-xs font-semibold text-emerald-400
-                             bg-emerald-500/10 px-2 py-0.5 rounded">
-                  +{{ g.gain_pct }}% performance
-                </span>
-
-                <span class="text-xs text-slate-400">
-                  {{ g.vram }}GB VRAM
-                </span>
-
-              </div>
-
-              <h5 class="font-bold text-slate-100 text-sm mt-2">
-                {{ g.name }}
-              </h5>
-
+        <!-- Storage -->
+        {% if recomms.storage_recommendation %}
+        <div class="mb-7">
+            <h3 class="text-sm font-bold uppercase tracking-wider text-slate-300 mb-3">Storage</h3>
+            <div class="bg-slate-800/50 border border-slate-700 rounded-xl p-4">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                    <div>
+                        <h4 class="font-bold">{{ recomms.storage_recommendation.title }}</h4>
+                        <p class="text-sm text-slate-400 mt-1">{{ recomms.storage_recommendation.reason }}</p>
+                    </div>
+                    <div class="text-cyan-400 font-bold whitespace-nowrap">{{ recomms.storage_recommendation.price_label }}</div>
+                </div>
+                <p class="text-xs text-slate-500 mt-2">Estimated market price — storage products are not currently stored as database rows.</p>
             </div>
-
-            <div class="mt-4 pt-3 border-t border-slate-700/60 text-xs">
-
-              <span class="{% if g.psu_ok %}text-slate-400{% else %}text-amber-400{% endif %}">
-                {{ g.note }}
-              </span>
-
-            </div>
-
-          </div>
-
-          {% endfor %}
-
         </div>
-
-        {% else %}
-
-        <p class="text-xs text-slate-500 italic">
-          Your current GPU is already near the top end; no further upgrade is necessary.
-        </p>
-
         {% endif %}
 
-      </div>
-
-
-      <!-- CPU suggestion -->
-      <div>
-
-        <h4 class="text-sm font-bold text-slate-300 uppercase tracking-wider mb-3">
-          Recommended CPU upgrade (Socket compatible with {{ mb.socket }})
-        </h4>
-
-        {% if recomms.cpu_upgrades %}
-
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-
-          {% for c in recomms.cpu_upgrades %}
-
-          <div class="bg-slate-800/40 border border-slate-700 rounded-xl p-4
-                      flex flex-col justify-between hover:border-cyan-500/50 transition">
-
-            <div>
-
-              <div class="flex items-center justify-between mb-1">
-
-                <span class="text-xs font-semibold text-cyan-400
-                             bg-cyan-500/10 px-2 py-0.5 rounded">
-                  +{{ c.gain_pct }}% power
-                </span>
-
-                <span class="text-xs text-slate-400">
-                  {{ c.cores }} cores
-                </span>
-
-              </div>
-
-              <h5 class="font-bold text-slate-100 text-sm mt-2">
-                {{ c.name }}
-              </h5>
-
+        <!-- GPU -->
+        <div class="mb-7">
+            <h3 class="text-sm font-bold uppercase tracking-wider text-slate-300 mb-3">Recommended GPU upgrade ({{ resolution }})</h3>
+            {% if recomms.gpu_upgrades %}
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {% for g in recomms.gpu_upgrades %}
+                <div class="bg-slate-800/50 border border-slate-700 rounded-xl p-4">
+                    <div class="flex justify-between gap-2">
+                        <span class="text-xs font-semibold text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded">+{{ g.gain_pct }}%</span>
+                        <span class="text-xs text-slate-400">{{ g.vram }}GB VRAM</span>
+                    </div>
+                    <h4 class="font-bold mt-3">{{ g.name }}</h4>
+                    <div class="text-cyan-400 font-bold text-lg mt-2">{{ g.price_label }}</div>
+                    {% if not g.price_available %}<p class="text-xs text-amber-400 mt-1">Price unavailable in database</p>{% endif %}
+                    <div class="text-xs mt-3 {% if g.psu_ok %}text-emerald-400{% else %}text-amber-400{% endif %}">{{ g.note }}</div>
+                    {% if not g.res_suitable %}<div class="text-xs text-amber-400 mt-1">Not ideal for {{ resolution }}</div>{% endif %}
+                    {% if budget > 0 and g.price_available %}
+                        <div class="text-xs mt-2 {% if g.within_budget %}text-emerald-400{% else %}text-amber-400{% endif %}">
+                            {% if g.within_budget %}Within budget{% else %}Over budget{% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
             </div>
-
-            <div class="mt-4 pt-3 border-t border-slate-700/60 text-xs">
-
-              <span class="{% if c.psu_ok %}text-emerald-400{% else %}text-amber-400{% endif %}">
-                {{ c.note }}
-              </span>
-
-            </div>
-
-          </div>
-
-          {% endfor %}
-
+            {% else %}
+                <p class="text-sm text-slate-500 italic">No suitable GPU upgrade was found.</p>
+            {% endif %}
         </div>
 
-        {% else %}
-
-        <p class="text-xs text-slate-500 italic">
-          There is no CPU on the same socket that is significantly stronger
-          without requiring a motherboard change.
-        </p>
-
-        {% endif %}
-
-      </div>
-
-    </div>
-
+        <!-- CPU -->
+        <div>
+            <h3 class="text-sm font-bold uppercase tracking-wider text-slate-300 mb-3">Recommended CPU upgrade ({{ mb.socket }})</h3>
+            {% if recomms.cpu_upgrades %}
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {% for c in recomms.cpu_upgrades %}
+                <div class="bg-slate-800/50 border border-slate-700 rounded-xl p-4">
+                    <div class="flex justify-between gap-2">
+                        <span class="text-xs font-semibold text-cyan-400 bg-cyan-500/10 px-2 py-1 rounded">+{{ c.gain_pct }}%</span>
+                        <span class="text-xs text-slate-400">{{ c.cores }} cores</span>
+                    </div>
+                    <h4 class="font-bold mt-3">{{ c.name }}</h4>
+                    <div class="text-cyan-400 font-bold text-lg mt-2">{{ c.price_label }}</div>
+                    {% if not c.price_available %}<p class="text-xs text-amber-400 mt-1">Price unavailable in database</p>{% endif %}
+                    <div class="text-xs mt-3 {% if c.psu_ok %}text-emerald-400{% else %}text-amber-400{% endif %}">{{ c.note }}</div>
+                    {% if budget > 0 and c.price_available %}
+                        <div class="text-xs mt-2 {% if c.within_budget %}text-emerald-400{% else %}text-amber-400{% endif %}">
+                            {% if c.within_budget %}Within budget{% else %}Over budget{% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+                <p class="text-sm text-slate-500 italic">No significantly stronger CPU on the same socket was found.</p>
+            {% endif %}
+        </div>
+    </section>
     {% endif %}
 
-
-    <!-- Initial compatibility status -->
-    <div class="p-5 rounded-2xl border bg-slate-900 border-slate-800 text-sm">
-
-      <h3 class="font-bold mb-2 flex items-center gap-2
-                 {% if compat.is_compatible %}
-                   text-emerald-400
-                 {% else %}
-                   text-rose-400
-                 {% endif %}">
-
-        <span>
-          {% if compat.is_compatible %}✓{% else %}✗{% endif %}
-        </span>
-
-        <span>Initial hardware compatibility</span>
-
-      </h3>
-
-      {% if not compat.is_compatible %}
-
-      <div class="bg-rose-950/30 border border-rose-500/40 rounded-xl p-3.5
-                  space-y-1 text-xs text-rose-300">
-
-        {% for issue in compat.issues %}
-        <p>• {{ issue }}</p>
-        {% endfor %}
-
-      </div>
-
-      {% else %}
-
-      <p class="text-xs text-slate-400">
-        CPU socket matches the motherboard socket
-        (<strong class="text-slate-200">{{ mb.socket }}</strong>).
-        The <strong class="text-slate-200">{{ psu_watt }}W</strong> PSU is safe
-        (estimated draw {{ compat.estimated_tdp }}W;
-        minimum recommended {{ compat.recommended_psu }}W).
-      </p>
-
-      {% endif %}
-
+    <div class="text-center pt-4">
+        <a href="/" class="inline-block bg-cyan-600 hover:bg-cyan-500 px-6 py-3 rounded-xl font-semibold transition">Analyze another PC</a>
     </div>
-
-
-    <!-- Repeat button -->
-    <div class="pt-2">
-
-      <a href="/"
-         class="block w-full text-center bg-cyan-600 hover:bg-cyan-500
-                text-white font-bold py-3.5 rounded-xl transition
-                shadow-lg shadow-cyan-950/40">
-        Check a different configuration
-      </a>
-
-    </div>
-
-  </div>
+</div>
 </body>
 </html>
