@@ -20,6 +20,7 @@ class GPU(Base):
     score = Column(Integer, default=15000)
     vram = Column(Integer, default=8)
     target_res = Column(String, default="1080p")
+    price = Column(Float, default=0.0)
 
 class Motherboard(Base):
     __tablename__ = "motherboards"
