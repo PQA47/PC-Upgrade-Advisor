@@ -2,9 +2,11 @@ from pathlib import Path
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.templating import Jinja2Templates
+from starlette.middleware.sessions import SessionMiddleware
+import os
 from apscheduler.schedulers.background import BackgroundScheduler
 
-from app.database.database import engine, Base, SessionLocal
+from app.database.database import engine, Base, SessionLocal, ensure_schema_columns
 
 # Support both component.py and components.py filenames automatically
 try:
@@ -12,10 +14,13 @@ try:
 except ImportError:
     from app.models.components import CPU, GPU, Motherboard
 
-from app.routes import recommendations
+from app.routes import recommendations, auth, history
 from app.routes.recommendations import run_background_scraper
+from app.models.user import User
+from app.models.analysis import Analysis
 
-# Create SQLite tables if they do not already exist
+# Migrate existing SQLite tables before SQLAlchemy issues queries.
+ensure_schema_columns()
 Base.metadata.create_all(bind=engine)
 
 # Initialize the background scheduler
@@ -50,6 +55,14 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=os.getenv("SESSION_SECRET", "dev-only-change-this"),
+    max_age=60 * 60 * 24 * 7,
+    same_site="lax",
+    https_only=False,
+)
+
 # Configure template path
 BASE_DIR = Path(__file__).resolve().parent.parent
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
@@ -57,6 +70,8 @@ app.state.templates = templates
 
 # Register the analysis and synchronization routes
 app.include_router(recommendations.router)
+app.include_router(auth.router)
+app.include_router(history.router)
 
 
 @app.get("/")
