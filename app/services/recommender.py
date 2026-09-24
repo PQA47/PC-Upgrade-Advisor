@@ -1,27 +1,20 @@
 from typing import Dict, Any
 
 
-# These are only used for RAM / storage because those two recommendations
-# are not stored as hardware rows in the current database.
-# CPU/GPU prices always come from the database when available.
-RAM_PRICE_ESTIMATES = {
-    16: 800_000,
-    32: 1_500_000,
-    64: 3_000_000,
-}
-
-STORAGE_PRICE_ESTIMATES = {
-    "NVMe M.2 SSD": 1_200_000,
-    "NVMe Gen 4": 1_500_000,
-}
-
-
-def money(value):
+def _price_info(price, budget: float = 0.0):
+    """Return a consistent price payload for Jinja templates."""
     try:
-        value = float(value or 0)
-        return round(value, 0) if value > 0 else None
+        value = float(price or 0)
     except (TypeError, ValueError):
-        return None
+        value = 0.0
+
+    available = value > 0
+    return {
+        "price": value,
+        "price_available": available,
+        "price_label": f"{value:,.0f} VND" if available else "Price unavailable",
+        "within_budget": bool(available and budget > 0 and value <= budget),
+    }
 
 
 def get_recommendations(
@@ -48,66 +41,47 @@ def get_recommendations(
         "total_price_complete": True,
     }
 
-    # --------------------------------------------------------
-    # Storage
-    # --------------------------------------------------------
+    # 1. Storage recommendations
     if storage_type == "HDD":
-        storage_price = STORAGE_PRICE_ESTIMATES["NVMe M.2 SSD"]
         recommendations["storage_recommendation"] = {
             "title": "Upgrade to an NVMe M.2 SSD",
-            "reason": "Replacing the HDD with an NVMe SSD can significantly improve boot, application and file-loading times.",
-            "price": storage_price,
-            "price_estimated": True,
-            "price_label": f"~{storage_price:,.0f} VND",
+            "reason": "Moving the OS from HDD to NVMe SSD can improve boot times and overall system responsiveness by 5-10x.",
+            "price_label": "Price not stored in database",
         }
     elif storage_type == "SATA SSD" and usage in ["editing", "ai"]:
-        storage_price = STORAGE_PRICE_ESTIMATES["NVMe Gen 4"]
         recommendations["storage_recommendation"] = {
             "title": "Add an NVMe Gen 4 drive",
-            "reason": "Heavy editing and AI workloads can benefit from faster NVMe storage.",
-            "price": storage_price,
-            "price_estimated": True,
-            "price_label": f"~{storage_price:,.0f} VND",
+            "reason": "Video editing and AI model loading involve heavy sustained I/O, and NVMe Gen 4 minimizes file access wait time.",
+            "price_label": "Price not stored in database",
         }
 
-    # --------------------------------------------------------
-    # RAM
-    # --------------------------------------------------------
+    # 2. RAM recommendations
     target_ram = 16
     if usage in ["editing", "programming", "ai"]:
         target_ram = 32
 
     if ram_gb < target_ram:
-        price = RAM_PRICE_ESTIMATES.get(target_ram)
         recommendations["ram_recommendation"] = {
             "title": f"Upgrade to {target_ram}GB RAM ({current_mb.get('ram_type', 'DDR4')})",
-            "reason": (
-                f"The current {ram_gb}GB capacity may be limiting for {usage.upper()} workloads. "
-                f"The motherboard uses {current_mb.get('ram_type', 'DDR4')} memory."
-            ),
-            "price": price,
-            "price_estimated": True,
-            "price_label": f"~{price:,.0f} VND" if price else "Price unavailable",
+            "reason": f"The current {ram_gb}GB capacity is not enough for smooth {usage.upper()} workloads. The current motherboard supports {current_mb.get('ram_type', 'DDR4')} memory.",
+            "price_label": "Price not stored in database",
         }
 
-    # --------------------------------------------------------
-    # CPU
-    # --------------------------------------------------------
-    current_score = current_cpu.get("score") or 0
-    if current_score > 0:
-        candidate_cpus = db.query(cpu_model).filter(
-            cpu_model.socket == current_mb.get("socket"),
-            cpu_model.score > current_score * 1.15,
-        ).order_by(cpu_model.score.asc()).all()
-    else:
-        candidate_cpus = []
+    # 3. CPU recommendations (same socket to keep the motherboard)
+    current_cpu_score = current_cpu.get("score", 0) or 0
+    current_gpu_tdp = current_gpu.get("tdp", 0) or 0
+    current_cpu_tdp = current_cpu.get("tdp", 0) or 0
+
+    candidate_cpus = db.query(cpu_model).filter(
+        cpu_model.socket == current_mb["socket"],
+        cpu_model.score > current_cpu_score * 1.15,
+    ).order_by(cpu_model.score.asc()).all()
 
     for cand in candidate_cpus[:3]:
-        gain_pct = round(((cand.score - current_score) / current_score) * 100)
-        needed_psu = (cand.tdp or 0) + (current_gpu.get("tdp") or 0) + 150
+        gain_pct = round(((cand.score - current_cpu_score) / current_cpu_score) * 100) if current_cpu_score else 0
+        needed_psu = (cand.tdp or 0) + current_gpu_tdp + 150
         psu_ok = psu_watt >= needed_psu
-        price = money(getattr(cand, "price", 0))
-        within_budget = budget <= 0 or price is None or price <= budget
+        price = _price_info(getattr(cand, "price", 0), budget)
 
         recommendations["cpu_upgrades"].append({
             "name": cand.name,
@@ -115,34 +89,23 @@ def get_recommendations(
             "cores": cand.cores,
             "score": cand.score,
             "gain_pct": gain_pct,
-            "price": price,
-            "price_label": f"{price:,.0f} VND" if price is not None else "Price unavailable",
-            "price_available": price is not None,
-            "within_budget": within_budget,
             "keep_mainboard": True,
             "psu_ok": psu_ok,
             "needed_psu": needed_psu,
-            "note": (
-                "Same socket; compatible with the current motherboard"
-                if psu_ok else f"Requires at least {needed_psu}W PSU"
-            ),
+            "note": "Same socket; compatible with the current motherboard" if psu_ok else f"Requires at least {needed_psu}W PSU",
+            **price,
         })
 
-    # --------------------------------------------------------
-    # GPU
-    # --------------------------------------------------------
-    current_gpu_score = current_gpu.get("score") or 0
-    if current_gpu_score > 0:
-        candidate_gpus = db.query(gpu_model).filter(
-            gpu_model.score > current_gpu_score * 1.2
-        ).order_by(gpu_model.score.asc()).all()
-    else:
-        candidate_gpus = []
+    # 4. GPU recommendations
+    candidate_gpus = db.query(gpu_model).filter(
+        gpu_model.score > (current_gpu.get("score", 0) or 0) * 1.2
+    ).order_by(gpu_model.score.asc()).all()
 
     gpu_candidates = []
     for cand in candidate_gpus:
-        gain_pct = round(((cand.score - current_gpu_score) / current_gpu_score) * 100)
-        needed_psu = (current_cpu.get("tdp") or 0) + (cand.tdp or 0) + 150
+        current_gpu_score = current_gpu.get("score", 0) or 0
+        gain_pct = round(((cand.score - current_gpu_score) / current_gpu_score) * 100) if current_gpu_score else 0
+        needed_psu = current_cpu_tdp + (cand.tdp or 0) + 150
         psu_ok = psu_watt >= needed_psu
 
         res_suitable = True
@@ -151,8 +114,7 @@ def get_recommendations(
         elif resolution == "4k" and (cand.vram or 0) < 12:
             res_suitable = False
 
-        price = money(getattr(cand, "price", 0))
-        within_budget = budget <= 0 or price is None or price <= budget
+        price = _price_info(getattr(cand, "price", 0), budget)
 
         gpu_candidates.append({
             "name": cand.name,
@@ -160,50 +122,33 @@ def get_recommendations(
             "tdp": cand.tdp,
             "score": cand.score,
             "gain_pct": gain_pct,
-            "price": price,
-            "price_label": f"{price:,.0f} VND" if price is not None else "Price unavailable",
-            "price_available": price is not None,
-            "within_budget": within_budget,
             "psu_ok": psu_ok,
             "needed_psu": needed_psu,
             "res_suitable": res_suitable,
-            "note": (
-                f"Compatible with the current {psu_watt}W PSU"
-                if psu_ok else f"Requires at least {needed_psu}W PSU"
-            ),
+            "note": f"Compatible with the current {psu_watt}W PSU" if psu_ok else f"Requires at least {needed_psu}W PSU",
+            **price,
         })
 
-    # Prefer resolution-suitable candidates within budget when prices exist.
-    budget_and_resolution = [
-        g for g in gpu_candidates if g["within_budget"] and g["res_suitable"]
-    ]
-    resolution_matches = [g for g in gpu_candidates if g["res_suitable"]]
+    # Prefer resolution-suitable and priced options when possible, while still
+    # returning recommendations if the database has no prices.
+    suitable = [g for g in gpu_candidates if g["res_suitable"]]
+    priced_suitable = [g for g in suitable if g["price_available"]]
+    if priced_suitable:
+        recommendations["gpu_upgrades"] = priced_suitable[:3]
+    else:
+        recommendations["gpu_upgrades"] = suitable[:3]
 
-    selected_gpus = budget_and_resolution or resolution_matches or gpu_candidates
-    recommendations["gpu_upgrades"] = selected_gpus[:3]
-
-    # --------------------------------------------------------
-    # Total price of the displayed recommendations.
-    # Only add prices that are actually known. The UI also tells the
-    # user when the total is incomplete.
-    # --------------------------------------------------------
-    price_items = []
-    for item in recommendations["cpu_upgrades"]:
-        if item["price"] is not None:
-            price_items.append(item["price"])
-    for item in recommendations["gpu_upgrades"]:
-        if item["price"] is not None:
-            price_items.append(item["price"])
-
-    if recommendations["ram_recommendation"]:
-        price_items.append(recommendations["ram_recommendation"]["price"])
-    if recommendations["storage_recommendation"]:
-        price_items.append(recommendations["storage_recommendation"]["price"])
-
-    recommendations["total_known_price"] = sum(price_items)
-    recommendations["total_price_complete"] = all(
-        item.get("price_available", True)
+    # The displayed CPU/GPU cards are alternatives, not parts that should all
+    # be purchased together. Therefore don't sum all recommendation cards.
+    known_prices = [
+        item["price"]
         for item in recommendations["cpu_upgrades"] + recommendations["gpu_upgrades"]
+        if item["price_available"]
+    ]
+    recommendations["total_known_price"] = sum(known_prices)
+    total_candidates = recommendations["cpu_upgrades"] + recommendations["gpu_upgrades"]
+    recommendations["total_price_complete"] = bool(total_candidates) and all(
+        item["price_available"] for item in total_candidates
     )
 
     return recommendations

@@ -83,7 +83,7 @@
                     </div>
                     <div class="text-cyan-400 font-bold whitespace-nowrap">{{ recomms.ram_recommendation.price_label }}</div>
                 </div>
-                <p class="text-xs text-slate-500 mt-2">Estimated market price — RAM pricing is not currently stored in the hardware database.</p>
+                <p class="text-xs text-slate-500 mt-2">RAM pricing is not currently stored in the hardware database.</p>
             </div>
         </div>
         {% endif %}
@@ -100,7 +100,7 @@
                     </div>
                     <div class="text-cyan-400 font-bold whitespace-nowrap">{{ recomms.storage_recommendation.price_label }}</div>
                 </div>
-                <p class="text-xs text-slate-500 mt-2">Estimated market price — storage products are not currently stored as database rows.</p>
+                <p class="text-xs text-slate-500 mt-2">Storage pricing is not currently stored in the hardware database.</p>
             </div>
         </div>
         {% endif %}
@@ -117,7 +117,9 @@
                         <span class="text-xs text-slate-400">{{ g.vram }}GB VRAM</span>
                     </div>
                     <h4 class="font-bold mt-3">{{ g.name }}</h4>
-                    <div class="text-cyan-400 font-bold text-lg mt-2">{{ g.price_label }}</div>
+                    <div class="text-cyan-400 font-bold text-lg mt-2">
+                        {% if g.price_available %}₫{{ "{:,.0f}".format(g.price) }}{% else %}Price unavailable{% endif %}
+                    </div>
                     {% if not g.price_available %}<p class="text-xs text-amber-400 mt-1">Price unavailable in database</p>{% endif %}
                     <div class="text-xs mt-3 {% if g.psu_ok %}text-emerald-400{% else %}text-amber-400{% endif %}">{{ g.note }}</div>
                     {% if not g.res_suitable %}<div class="text-xs text-amber-400 mt-1">Not ideal for {{ resolution }}</div>{% endif %}
@@ -146,7 +148,9 @@
                         <span class="text-xs text-slate-400">{{ c.cores }} cores</span>
                     </div>
                     <h4 class="font-bold mt-3">{{ c.name }}</h4>
-                    <div class="text-cyan-400 font-bold text-lg mt-2">{{ c.price_label }}</div>
+                    <div class="text-cyan-400 font-bold text-lg mt-2">
+                        {% if c.price_available %}₫{{ "{:,.0f}".format(c.price) }}{% else %}Price unavailable{% endif %}
+                    </div>
                     {% if not c.price_available %}<p class="text-xs text-amber-400 mt-1">Price unavailable in database</p>{% endif %}
                     <div class="text-xs mt-3 {% if c.psu_ok %}text-emerald-400{% else %}text-amber-400{% endif %}">{{ c.note }}</div>
                     {% if budget > 0 and c.price_available %}
