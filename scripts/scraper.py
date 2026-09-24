@@ -1,6 +1,5 @@
 import sys
 import re
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any, Optional
 
@@ -29,7 +28,10 @@ Base.metadata.create_all(bind=engine)
 # CONFIG
 # ============================================================
 
-TIMEOUT = 30
+TIMEOUT = 15
+
+# Parallel CPU downloads make the scraper much faster than sequential requests.
+CPU_WORKERS = 16
 
 HEADERS = {
     "User-Agent": "PC-Advisor-University-Project/1.0",
@@ -86,6 +88,233 @@ GPU_URLS = {
 }
 
 
+# ------------------------------------------------------------
+# VTCOM retail price source
+#
+# VTCOM is a Vietnamese PC retailer. Its CPU and VGA collection
+# pages currently expose product prices in VND. We use the lowest
+# currently listed price for a matching CPU/GPU model, rather than
+# inventing a price.
+# ------------------------------------------------------------
+
+VTCOM_COLLECTIONS = {
+    "cpu": "https://vtcom.com.vn/collections/chip-xu-ly-cpu-1",
+    "gpu": "https://vtcom.com.vn/collections/vga",
+}
+
+VTCOM_MAX_PAGES = 10
+
+
+def normalize_price_model_name(name: str) -> str:
+    """Normalize names so retailer names match benchmark database names."""
+    value = clean_text(name).lower()
+    value = value.replace("™", "").replace("®", "")
+    value = value.replace("geforce", " ").replace("radeon", " ")
+    value = value.replace("graphics", " ")
+    value = re.sub(r"\b(cpu|vga|card|card màn hình)\b", " ", value)
+    value = re.sub(r"[^a-z0-9]+", " ", value)
+    return re.sub(r"\s+", " ", value).strip()
+
+
+def cpu_price_key(name: str) -> str:
+    """Extract the CPU family/model used for retail-price matching."""
+    n = normalize_price_model_name(name)
+
+    patterns = [
+        r"\b(core ultra [3579]\s+\d{3,4}[a-z0-9]*)\b",
+        r"\b(core [i3579]\s+\d{3,5}[a-z0-9]*)\b",
+        r"\b(ryzen\s+(?:threadripper\s+)?[3579]\s+\d{3,5}[a-z0-9]*)\b",
+        r"\b(ryzen\s+\d{3,5}[a-z0-9]*)\b",
+    ]
+
+    for pattern in patterns:
+        match = re.search(pattern, n, re.I)
+        if match:
+            return normalize_price_model_name(match.group(1))
+
+    return n
+
+
+def gpu_price_key(name: str) -> str:
+    """
+    Convert both database names and retailer board-partner names to the same
+    canonical GPU model.
+
+    Examples:
+      NVIDIA GeForce RTX 3060 -> rtx 3060
+      ASUS Dual GeForce RTX 3060 OC Edition 12GB -> rtx 3060
+      MSI GeForce RTX 3060 VENTUS 2X 12G OC -> rtx 3060
+      AMD Radeon RX 6700 XT -> rx 6700 xt
+      SAPPHIRE Radeon RX 6700 XT -> rx 6700 xt
+    """
+    n = normalize_price_model_name(name)
+
+    # Put the model suffix before optional VRAM text.
+    patterns = [
+        r"\brtx\s*([2-5]\d{3})\s*(ti\s*super|ti|super)?\b",
+        r"\bgtx\s*(\d{3,4})\s*(ti|super)?\b",
+        r"\brx\s*(\d{3,4})\s*(xtx|xt|gre)?\b",
+        r"\barc\s*([ab]\d{3,4})\b",
+    ]
+
+    for pattern in patterns:
+        match = re.search(pattern, n, re.I)
+        if not match:
+            continue
+
+        model = match.group(0)
+        model = re.sub(r"\s+", " ", model).strip()
+        return model.lower()
+
+    return n
+
+
+def parse_vnd_price(value: Any) -> float:
+    """Convert VND text/numeric values to a positive float."""
+    if value is None:
+        return 0.0
+
+    text = clean_text(value)
+    if not text:
+        return 0.0
+
+    # 5,990,000₫ / 5.990.000 đ / 5990000
+    digits = re.sub(r"[^\d]", "", text)
+    if not digits:
+        return 0.0
+
+    try:
+        price = float(digits)
+    except ValueError:
+        return 0.0
+
+    # Retail VND prices should be meaningful hardware prices.
+    return price if price >= 100_000 else 0.0
+
+
+def fetch_vtcom_json_collection(url: str, kind: str) -> list[dict]:
+    """Fetch Shopify collection pages concurrently and return {name, price} records."""
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+
+    PAGE_WORKERS = 6
+
+    def fetch_page(page):
+        endpoint = f"{url}/products.json?limit=250&page={page}"
+
+        try:
+            response = requests.get(
+                endpoint,
+                headers={
+                    **HEADERS,
+                    "Accept": "application/json,text/html;q=0.9,*/*;q=0.8",
+                },
+                timeout=TIMEOUT,
+            )
+            response.raise_for_status()
+            payload = response.json()
+            return page, payload.get("products", [])
+        except Exception as exc:
+            print(f"\n⚠️ VTCOM {kind} page {page} failed: {exc}")
+            return page, []
+
+    products = []
+
+    # Shopify pagination is independent, so fetch the first batch concurrently.
+    with ThreadPoolExecutor(max_workers=PAGE_WORKERS) as executor:
+        futures = [
+            executor.submit(fetch_page, page)
+            for page in range(1, VTCOM_MAX_PAGES + 1)
+        ]
+
+        for future in as_completed(futures):
+            _, page_products = future.result()
+
+            for product in page_products:
+                name = normalize_name(product.get("title", ""))
+                if not name:
+                    continue
+
+                prices = [
+                    parse_vnd_price(v.get("price"))
+                    for v in product.get("variants", [])
+                ]
+                prices = [p for p in prices if p > 0]
+
+                if prices:
+                    products.append({
+                        "name": name,
+                        "price": min(prices),
+                    })
+
+    return products
+
+
+def scrape_vtcom_prices(kind: str) -> dict[str, float]:
+    """
+    Return model-key -> lowest current VTCOM retail price in VND.
+
+    VTCOM is used only for price enrichment; hardware specifications
+    continue to come from TechAPI/RightNow.
+    """
+    url = VTCOM_COLLECTIONS[kind]
+
+    print(f"\n⏳ Fetching current VTCOM {kind.upper()} retail prices...")
+
+    products = fetch_vtcom_json_collection(url, kind)
+
+    if not products:
+        print(f"⚠️ No VTCOM {kind.upper()} prices were found.")
+        return {}
+
+    prices = {}
+
+    key_func = cpu_price_key if kind == "cpu" else gpu_price_key
+
+    for product in products:
+        key = key_func(product["name"])
+        price = product["price"]
+
+        if not key or price <= 0:
+            continue
+
+        if key not in prices or price < prices[key]:
+            prices[key] = price
+
+    print(
+        f"✓ Found {len(prices)} current VTCOM {kind.upper()} model prices."
+    )
+
+    return prices
+
+
+def enrich_cpu_prices(cpu_data: list[dict], price_map: dict[str, float]) -> int:
+    matched = 0
+
+    for cpu in cpu_data:
+        key = cpu_price_key(cpu["name"])
+        price = price_map.get(key, 0.0)
+
+        if price > 0:
+            cpu["price"] = price
+            matched += 1
+
+    return matched
+
+
+def enrich_gpu_prices(gpu_data: list[dict], price_map: dict[str, float]) -> int:
+    matched = 0
+
+    for gpu in gpu_data:
+        key = gpu_price_key(gpu["name"])
+        price = price_map.get(key, 0.0)
+
+        if price > 0:
+            gpu["price"] = price
+            matched += 1
+
+    return matched
+
+
 # ============================================================
 # HTTP
 # ============================================================
@@ -119,6 +348,30 @@ def get_json(url: str) -> Optional[Any]:
         print(f"   {exc}")
 
         return None
+
+
+# ============================================================
+# PROGRESS DISPLAY
+# ============================================================
+
+def show_progress(current: int, total: int, label: str = "", width: int = 32):
+    """Draw a simple terminal progress bar without extra dependencies."""
+    if total <= 0:
+        return
+
+    current = min(current, total)
+    ratio = current / total
+    filled = int(width * ratio)
+    bar = "█" * filled + "░" * (width - filled)
+    percent = ratio * 100
+    message = f"[{bar}] {percent:6.2f}% ({current}/{total})"
+    if label:
+        message += f" | {label[:55]}"
+
+    print("\r" + message.ljust(100), end="", flush=True)
+
+    if current >= total:
+        print()
 
 
 # ============================================================
@@ -218,6 +471,52 @@ def to_float(
     ):
 
         return default
+
+
+def extract_price_vnd(data: dict) -> float:
+    """Extract a retail price in VND when the source actually provides one.
+
+    The current TechAPI and RightNow GPU datasets are specification datasets and
+    normally do not contain retail prices. Therefore this function returns 0.0
+    when no explicit price field is present instead of inventing a price.
+    """
+    candidates = [
+        "price",
+        "priceVnd",
+        "price_vnd",
+        "retailPrice",
+        "retail_price",
+        "msrp",
+        "MSRP",
+    ]
+
+    for key in candidates:
+        value = data.get(key)
+        if value is None or value == "":
+            continue
+
+        # Support nested objects such as {"amount": 123, "currency": "VND"}.
+        if isinstance(value, dict):
+            amount = first_value(value, "amount", "value", "price", default=None)
+            currency = clean_text(first_value(value, "currency", "currencyCode", default="")).upper()
+            if amount is not None and (not currency or currency in {"VND", "VNĐ", "₫"}):
+                parsed = to_float(amount)
+                if parsed > 0:
+                    return parsed
+            continue
+
+        text = clean_text(value)
+        upper = text.upper()
+        parsed = to_float(value)
+        if parsed <= 0:
+            continue
+
+        # Only treat an explicit VND/₫ value as VND. Numeric values are accepted
+        # because the project database stores component prices in VND.
+        if "VND" in upper or "VNĐ" in upper or "₫" in text or re.fullmatch(r"[\d\s,.-]+", text):
+            return parsed
+
+    return 0.0
 
 
 def normalize_name(
@@ -419,7 +718,7 @@ def extract_cpu_score(
 def get_techapi_cpu_files():
 
     print(
-        "⏳ Discovering CPU JSON files from TechAPI..."
+        "\n⏳ Discovering CPU JSON files from TechAPI..."
     )
 
     payload = get_json(
@@ -483,69 +782,150 @@ def scrape_cpus():
     if not files:
         return []
 
-    def fetch_cpu(path):
-        url = TECHAPI_RAW_BASE + path
-        return path, get_json(url)
+    # CPU data is stored as many small JSON files. Downloading them one-by-one
+    # is the main bottleneck, so fetch several files concurrently.
+    from concurrent.futures import ThreadPoolExecutor, as_completed
 
+    MAX_WORKERS = CPU_WORKERS
+    total_files = len(files)
     results = []
     completed = 0
-    total = len(files)
 
-    # TechAPI contains thousands of small JSON files. Download them
-    # concurrently so the scraper does not spend several minutes waiting
-    # on one HTTP request at a time.
-    with ThreadPoolExecutor(max_workers=8) as executor:
-        futures = [executor.submit(fetch_cpu, path) for path in files]
+    def fetch_cpu(path):
+        url = TECHAPI_RAW_BASE + path
+        data = get_json(url)
+
+        if not isinstance(data, dict):
+            return None
+
+        name = normalize_name(first_value(
+            data, "name", "model", "title", default=""
+        ))
+
+        if not name or not is_desktop_cpu(name):
+            return None
+
+        return {
+            "name": name,
+            "score": extract_cpu_score(data),
+            "price": extract_price_vnd(data),
+            "socket": extract_socket(data),
+            "cores": extract_cpu_cores(data),
+            "tdp": extract_cpu_tdp(data),
+        }
+
+    print(f"⏳ Downloading {total_files} CPU files with {MAX_WORKERS} workers...")
+
+    with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
+        futures = {executor.submit(fetch_cpu, path): path for path in files}
 
         for future in as_completed(futures):
-            path, data = future.result()
+            path = futures[future]
             completed += 1
 
-            if completed % 100 == 0 or completed == total:
-                print(f"   Processed {completed}/{total} CPU files...")
+            try:
+                cpu = future.result()
+                if cpu is not None:
+                    results.append(cpu)
+                label = f"CPU: {Path(path).name}"
+            except Exception as exc:
+                label = f"CPU error: {Path(path).name} ({exc})"
 
-            if not isinstance(data, dict):
-                continue
+            show_progress(completed, total_files, label)
 
-            name = first_value(
-                data,
-                "name",
-                "model",
-                "title",
-                default=""
-            )
-            name = normalize_name(name)
+    # --------------------------------------------------------
+    # Retail price enrichment
+    # --------------------------------------------------------
 
-            if not name or not is_desktop_cpu(name):
-                continue
+    cpu_price_map = scrape_vtcom_prices("cpu")
+    cpu_price_matches = enrich_cpu_prices(results, cpu_price_map)
 
-            results.append({
-                "name": name,
-                "score": extract_cpu_score(data),
-                "socket": extract_socket(data),
-                "cores": extract_cpu_cores(data),
-                "tdp": extract_cpu_tdp(data),
-            })
+    print(
+        f"✓ Matched current VTCOM prices to {cpu_price_matches} CPU records."
+    )
 
+    # --------------------------------------------------------
     # Deduplicate
+    # --------------------------------------------------------
+
     unique = {}
+
     for cpu in results:
+
         key = cpu["name"].lower()
+
         if key not in unique:
+
             unique[key] = cpu
+
         else:
+
             existing = unique[key]
+
             if cpu["score"] > existing["score"]:
                 existing["score"] = cpu["score"]
+
             if cpu["cores"] > existing["cores"]:
                 existing["cores"] = cpu["cores"]
+
             if cpu["socket"] != "Other":
                 existing["socket"] = cpu["socket"]
+
             if cpu["tdp"] > 0:
                 existing["tdp"] = cpu["tdp"]
 
+            if cpu.get("price", 0) > 0:
+                existing["price"] = cpu["price"]
+
     results = list(unique.values())
+
     print(f"✓ Prepared {len(results)} desktop CPU records.")
+
+    return results
+
+    # --------------------------------------------------------
+    # Deduplicate
+    # --------------------------------------------------------
+
+    unique = {}
+
+    for cpu in results:
+
+        key = cpu["name"].lower()
+
+        if key not in unique:
+
+            unique[key] = cpu
+
+        else:
+
+            existing = unique[key]
+
+            if cpu["score"] > existing["score"]:
+                existing["score"] = cpu["score"]
+
+            if cpu["cores"] > existing["cores"]:
+                existing["cores"] = cpu["cores"]
+
+            if (
+                cpu["socket"] != "Other"
+            ):
+                existing["socket"] = cpu["socket"]
+
+            if cpu["tdp"] > 0:
+                existing["tdp"] = cpu["tdp"]
+
+            if cpu.get("price", 0) > 0:
+                existing["price"] = cpu["price"]
+
+    results = list(
+        unique.values()
+    )
+
+    print(
+        f"✓ Prepared {len(results)} desktop CPU records."
+    )
+
     return results
 
 
@@ -701,7 +1081,7 @@ def load_gpu_source(
 def scrape_gpus():
 
     print(
-        "⏳ Loading GPU data from structured sources..."
+        "\n⏳ Loading GPU data from structured sources..."
     )
 
     all_records = []
@@ -727,12 +1107,21 @@ def scrape_gpus():
 
     results = []
 
-    for record in all_records:
+    total_records = len(all_records)
+
+    for index, record in enumerate(all_records, start=1):
+
+        show_progress(
+            index - 1,
+            total_records,
+            "GPU: processing records"
+        )
 
         if not isinstance(
             record,
             dict
         ):
+            show_progress(index, total_records, "GPU: skipped invalid record")
             continue
 
         name = first_value(
@@ -767,16 +1156,35 @@ def scrape_gpus():
             record
         )
 
+        price = extract_price_vnd(record)
+
         results.append({
             "name": name,
             "score": score,
-            "price": 0.0,
+            "price": price,
             "vram": vram,
             "tdp": tdp,
             "target_res": target_resolution(
                 vram
             ),
         })
+
+        show_progress(
+            index,
+            total_records,
+            f"GPU: processed {name}"
+        )
+
+    # --------------------------------------------------------
+    # Retail price enrichment
+    # --------------------------------------------------------
+
+    gpu_price_map = scrape_vtcom_prices("gpu")
+    gpu_price_matches = enrich_gpu_prices(results, gpu_price_map)
+
+    print(
+        f"✓ Matched current VTCOM prices to {gpu_price_matches} GPU records."
+    )
 
     # --------------------------------------------------------
     # Deduplicate
@@ -804,6 +1212,9 @@ def scrape_gpus():
 
             if gpu["tdp"] > 0:
                 existing["tdp"] = gpu["tdp"]
+
+            if gpu.get("price", 0) > 0:
+                existing["price"] = gpu["price"]
 
             existing["target_res"] = (
                 target_resolution(
@@ -867,6 +1278,10 @@ def save_cpus(
 
                 existing.tdp = data["tdp"]
 
+            if data.get("price", 0) > 0:
+
+                existing.price = data["price"]
+
             updated += 1
 
         else:
@@ -878,6 +1293,7 @@ def save_cpus(
                     socket=data["socket"],
                     cores=data["cores"],
                     tdp=data["tdp"],
+                    price=data.get("price", 0.0),
                 )
             )
 
@@ -885,11 +1301,13 @@ def save_cpus(
 
     db.commit()
 
+    priced = sum(1 for data in cpu_data if data.get("price", 0) > 0)
     print(
         f"✓ CPU database: "
         f"{added} added, "
         f"{updated} updated, "
-        f"{scores_updated} scores updated."
+        f"{scores_updated} scores updated, "
+        f"{priced} source prices found."
     )
 
 
@@ -936,12 +1354,10 @@ def save_gpus(
                 data["target_res"]
             )
 
-            # IMPORTANT:
-            #
-            # Do not overwrite existing prices.
-            #
-            # This source provides hardware specs,
-            # not retail pricing.
+            # Keep the existing database price unless the source provides
+            # a new explicit VND price.
+            if data.get("price", 0) > 0:
+                existing.price = data["price"]
 
             updated += 1
 
@@ -962,11 +1378,13 @@ def save_gpus(
 
     db.commit()
 
+    priced = sum(1 for data in gpu_data if data.get("price", 0) > 0)
     print(
         f"✓ GPU database: "
         f"{added} added, "
         f"{updated} updated, "
-        f"{scores_updated} scores updated."
+        f"{scores_updated} scores updated, "
+        f"{priced} source prices found."
     )
 
 
