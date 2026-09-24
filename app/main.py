@@ -4,7 +4,7 @@ from fastapi import FastAPI, Request
 from fastapi.templating import Jinja2Templates
 from apscheduler.schedulers.background import BackgroundScheduler
 
-from app.database.database import engine, Base, SessionLocal
+from app.database.database import engine, Base, SessionLocal, ensure_schema_columns
 
 # Support both component.py and components.py filenames automatically
 try:
@@ -15,7 +15,8 @@ except ImportError:
 from app.routes import recommendations
 from app.routes.recommendations import run_background_scraper
 
-# Create SQLite tables if they do not already exist
+# Migrate existing SQLite tables before SQLAlchemy issues queries.
+ensure_schema_columns()
 Base.metadata.create_all(bind=engine)
 
 # Initialize the background scheduler

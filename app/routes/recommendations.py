@@ -50,7 +50,7 @@ async def analyze(
     resolution: str = Form(...),
     usage: str = Form(...),
     psu_watt: int = Form(...),
-    budget: float = Form(...)
+    budget: float = Form(0)
 ):
     db = SessionLocal()
     try:

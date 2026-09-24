@@ -13,7 +13,7 @@ import requests
 BASE_DIR = Path(__file__).resolve().parent.parent
 sys.path.append(str(BASE_DIR))
 
-from app.database.database import SessionLocal, engine, Base
+from app.database.database import SessionLocal, engine, Base, ensure_schema_columns
 
 try:
     from app.models.component import CPU, GPU, Motherboard
@@ -21,6 +21,7 @@ except ImportError:
     from app.models.components import CPU, GPU, Motherboard
 
 
+ensure_schema_columns()
 Base.metadata.create_all(bind=engine)
 
 
