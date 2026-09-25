@@ -15,10 +15,36 @@
         <h1 class="text-3xl font-extrabold text-cyan-400 tracking-tight">PC Upgrade Advisor</h1>
         <p class="text-slate-400 text-sm mt-1">System for analyzing hardware configurations, identifying bottlenecks, and giving smart upgrade recommendations.</p>
       </div>
-      <div class="flex items-center gap-3">
+      <div class="ml-auto flex items-center justify-end gap-3 flex-wrap">
+        {% if request.session.get("user_id") %}
+          <span class="text-sm text-slate-300 whitespace-nowrap">
+            Hi, <span class="text-cyan-400 font-semibold">{{ request.session.get("username") }}</span>
+          </span>
+
+          <a href="/history"
+             class="text-xs bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700 px-3.5 py-2.5 rounded-xl transition whitespace-nowrap">
+            📋 History
+          </a>
+
+          <a href="/logout"
+             class="text-xs bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 px-3.5 py-2.5 rounded-xl transition whitespace-nowrap">
+            Logout
+          </a>
+        {% else %}
+          <a href="/login"
+             class="text-xs bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700 px-3.5 py-2.5 rounded-xl transition whitespace-nowrap">
+            🔐 Login
+          </a>
+
+          <a href="/register"
+             class="text-xs bg-cyan-600 hover:bg-cyan-500 text-white px-3.5 py-2.5 rounded-xl transition whitespace-nowrap">
+            ✨ Register
+          </a>
+        {% endif %}
+
         <a href="/api/sync-data" target="_blank"
-           class="text-xs bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700 px-3.5 py-2.5 rounded-xl transition flex items-center gap-2 shadow-sm">
-          <span>🔄</span> Sync PassMark data in background
+           class="text-xs bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700 px-3.5 py-2.5 rounded-xl transition flex items-center gap-2 whitespace-nowrap">
+          <span>🔄</span><span class="hidden sm:inline">Sync data</span>
         </a>
       </div>
     </div>

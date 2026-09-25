@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Analysis History - PC Upgrade Advisor</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-slate-950 text-white px-4 py-10">
+  <div class="max-w-5xl mx-auto">
+    <div class="flex items-center justify-between gap-4 mb-8">
+      <div>
+        <h1 class="text-3xl font-bold">Analysis History</h1>
+        <p class="text-slate-400 mt-1">Your saved PC analyses.</p>
+      </div>
+      <div class="flex gap-2">
+        <a href="/" class="rounded-xl bg-slate-900 border border-slate-700 px-4 py-2 text-sm">Home</a>
+        <a href="/logout" class="rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 px-4 py-2 text-sm">Logout</a>
+      </div>
+    </div>
+
+    {% if analyses %}
+      <div class="space-y-4">
+      {% for item in analyses %}
+        <div class="rounded-2xl border border-slate-800 bg-slate-900 p-6">
+          <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+            <div>
+              <div class="text-sm text-slate-500">{{ item.created_at.strftime('%Y-%m-%d %H:%M') }}</div>
+              <h2 class="text-xl font-semibold mt-1">{{ item.cpu_name }} + {{ item.gpu_name }}</h2>
+              <p class="text-slate-400 mt-1">{{ item.motherboard_name }}</p>
+            </div>
+            <div class="flex gap-2 flex-wrap">
+              <a href="/history/{{ item.id }}" class="rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white px-4 py-2 text-sm font-semibold">View result</a>
+              <form action="/history/delete/{{ item.id }}" method="POST">
+                <button type="submit" class="rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 px-4 py-2 text-sm">Delete</button>
+              </form>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mt-5 text-sm">
+            <div class="rounded-xl bg-slate-800 p-3"><div class="text-slate-500">RAM</div><div class="font-semibold mt-1">{{ item.ram_gb }} GB</div></div>
+            <div class="rounded-xl bg-slate-800 p-3"><div class="text-slate-500">Resolution</div><div class="font-semibold mt-1">{{ item.resolution }}</div></div>
+            <div class="rounded-xl bg-slate-800 p-3"><div class="text-slate-500">Usage</div><div class="font-semibold mt-1 capitalize">{{ item.usage }}</div></div>
+            <div class="rounded-xl bg-slate-800 p-3"><div class="text-slate-500">PSU</div><div class="font-semibold mt-1">{{ item.psu_watt }} W</div></div>
+            <div class="rounded-xl bg-slate-800 p-3"><div class="text-slate-500">Budget</div><div class="font-semibold mt-1">{{ '{:,.0f}'.format(item.budget) }} VND</div></div>
+          </div>
+        </div>
+      {% endfor %}
+      </div>
+    {% else %}
+      <div class="rounded-2xl border border-dashed border-slate-700 bg-slate-900/60 p-12 text-center">
+        <div class="text-5xl mb-4">📋</div>
+        <h2 class="text-xl font-semibold">No saved analyses yet</h2>
+        <p class="text-slate-400 mt-2">Run an analysis while logged in and it will appear here.</p>
+        <a href="/" class="inline-block mt-6 rounded-xl bg-cyan-600 hover:bg-cyan-500 px-5 py-3 font-semibold">Analyze a PC</a>
+      </div>
+    {% endif %}
+  </div>
+</body>
+</html>

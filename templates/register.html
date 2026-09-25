@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register - PC Upgrade Advisor</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-slate-950 text-white flex items-center justify-center px-4">
+  <div class="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-2xl">
+    <div class="mb-6">
+      <h1 class="text-3xl font-bold">Create account</h1>
+      <p class="text-slate-400 mt-1">Save your PC analyses and view history</p>
+    </div>
+    {% if error %}
+    <div class="mb-5 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">{{ error }}</div>
+    {% endif %}
+    <form action="/register" method="POST" class="space-y-5">
+      <div>
+        <label class="block text-sm text-slate-300 mb-2">Username</label>
+        <input type="text" name="username" minlength="3" required autocomplete="username"
+               class="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 outline-none focus:border-cyan-500">
+      </div>
+      <div>
+        <label class="block text-sm text-slate-300 mb-2">Email</label>
+        <input type="email" name="email" required autocomplete="email"
+               class="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 outline-none focus:border-cyan-500">
+      </div>
+      <div>
+        <label class="block text-sm text-slate-300 mb-2">Password</label>
+        <input type="password" name="password" minlength="8" required autocomplete="new-password"
+               class="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 outline-none focus:border-cyan-500">
+      </div>
+      <button type="submit" class="w-full rounded-xl bg-cyan-600 hover:bg-cyan-500 py-3 font-semibold">Create account</button>
+    </form>
+    <p class="text-center text-sm text-slate-400 mt-6">
+      Already have an account?
+      <a href="/login" class="text-cyan-400 hover:underline">Login</a>
+    </p>
+    <p class="text-center mt-4"><a href="/" class="text-sm text-slate-500 hover:text-slate-300">← Back to home</a></p>
+  </div>
+</body>
+</html>

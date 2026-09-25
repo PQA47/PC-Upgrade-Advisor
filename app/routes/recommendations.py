@@ -1,5 +1,6 @@
 import sys
 import subprocess
+import json
 from pathlib import Path
 from fastapi import APIRouter, Request, Form, BackgroundTasks
 from fastapi.responses import HTMLResponse
@@ -13,6 +14,7 @@ except ImportError:
 from app.services.compatibility import check_compatibility
 from app.services.analyzer import decide_upgrade
 from app.services.recommender import get_recommendations
+from app.models.analysis import Analysis
 
 router = APIRouter()
 
@@ -49,7 +51,8 @@ async def analyze(
     storage_type: str = Form(...),
     resolution: str = Form(...),
     usage: str = Form(...),
-    psu_watt: int = Form(...)
+    psu_watt: int = Form(...),
+    budget: float = Form(0)
 ):
     db = SessionLocal()
     try:
@@ -100,14 +103,16 @@ async def analyze(
             "socket": cpu_obj.socket,
             "tdp": cpu_obj.tdp,
             "score": cpu_obj.score,
-            "cores": cpu_obj.cores
+            "cores": cpu_obj.cores,
+            "price": getattr(cpu_obj, "price", 0.0)
         }
         gpu_dict = {
             "name": gpu_obj.name,
             "tdp": gpu_obj.tdp,
             "score": gpu_obj.score,
             "vram": gpu_obj.vram,
-            "target_res": gpu_obj.target_res
+            "target_res": gpu_obj.target_res,
+            "price": getattr(gpu_obj, "price", 0.0)
         }
         mb_dict = {
             "name": mb_obj.name,
@@ -129,22 +134,65 @@ async def analyze(
         )
 
         # 6. Generate specific upgrade suggestions (keep the same socket, upgrade GPU based on PSU, etc.)
-        recomms = get_recommendations(
-            db=db,
-            cpu_model=CPU,
-            gpu_model=GPU,
-            current_cpu=cpu_dict,
-            current_gpu=gpu_dict,
-            current_mb=mb_dict,
-            psu_watt=psu_watt,
-            ram_gb=ram_gb,
-            storage_type=storage_type,
-            resolution=resolution,
-            usage=usage,
-            decision=decision
-        )
+        if compat.get("hardware_compatible", compat["is_compatible"]):
+            recomms = get_recommendations(
+                db=db,
+                cpu_model=CPU,
+                gpu_model=GPU,
+                current_cpu=cpu_dict,
+                current_gpu=gpu_dict,
+                current_mb=mb_dict,
+                psu_watt=psu_watt,
+                ram_gb=ram_gb,
+                storage_type=storage_type,
+                resolution=resolution,
+                usage=usage,
+                decision=decision,
+                budget=budget
+            )
+        else:
+            recomms = {
+                "cpu_upgrades": [],
+                "gpu_upgrades": [],
+                "ram_recommendation": None,
+                "storage_recommendation": None
+            }
 
-        # 7. Render results via Jinja2 template
+        # 7. Save the analysis for logged-in users.
+        user_id = request.session.get("user_id")
+        if user_id:
+            result_snapshot = {
+                "cpu": cpu_dict,
+                "gpu": gpu_dict,
+                "mb": mb_dict,
+                "ram_gb": ram_gb,
+                "storage_type": storage_type,
+                "resolution": resolution,
+                "usage": usage,
+                "psu_watt": psu_watt,
+                "compat": compat,
+                "decision": decision,
+                "recomms": recomms,
+                "budget": budget,
+            }
+
+            saved_analysis = Analysis(
+                user_id=user_id,
+                cpu_name=cpu_dict["name"],
+                gpu_name=gpu_dict["name"],
+                motherboard_name=mb_dict["name"],
+                ram_gb=ram_gb,
+                storage_type=storage_type,
+                resolution=resolution,
+                usage=usage,
+                psu_watt=psu_watt,
+                budget=budget,
+                result_json=json.dumps(result_snapshot, ensure_ascii=False),
+            )
+            db.add(saved_analysis)
+            db.commit()
+
+        # 8. Render results via Jinja2 template
         return request.app.state.templates.TemplateResponse(
             request=request,
             name="results.html",
@@ -159,7 +207,8 @@ async def analyze(
                 "psu_watt": psu_watt,
                 "compat": compat,
                 "decision": decision,
-                "recomms": recomms
+                "recomms": recomms,
+                "budget": budget
             }
         )
     finally:
