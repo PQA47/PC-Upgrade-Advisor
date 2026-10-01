@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float
+from sqlalchemy import Column, Integer, String, Float, DateTime
 from app.database.database import Base
 
 
@@ -12,6 +12,8 @@ class CPU(Base):
     socket = Column(String, default="Other")
     cores = Column(Integer, default=0)
     price = Column(Float, default=0.0)
+    price_source = Column(String, nullable=True)
+    price_updated_at = Column(DateTime, nullable=True)
 
 
 class GPU(Base):
@@ -24,6 +26,8 @@ class GPU(Base):
     vram = Column(Integer, default=0)
     target_res = Column(String, default="1080p")
     price = Column(Float, default=0.0)
+    price_source = Column(String, nullable=True)
+    price_updated_at = Column(DateTime, nullable=True)
 
 
 class Motherboard(Base):

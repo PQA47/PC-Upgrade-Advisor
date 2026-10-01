@@ -103,6 +103,15 @@
               </datalist>
             </div>
 
+            <!-- Upgrade budget -->
+            <div>
+              <label class="block text-sm font-medium text-slate-300 mb-1.5">Upgrade budget (VND)</label>
+              <input type="number" name="budget" value="0" min="0" step="100000"
+                     placeholder="Example: 10000000"
+                     class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition text-sm">
+              <p class="text-xs text-slate-500 mt-1.5">Enter 0 for no budget limit. Current CPU/GPU retail prices are used when available.</p>
+            </div>
+
             <!-- PSU power -->
             <div>
               <label class="block text-sm font-medium text-slate-300 mb-1.5">Current PSU wattage</label>

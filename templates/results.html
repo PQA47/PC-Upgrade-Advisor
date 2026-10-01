@@ -16,7 +16,7 @@
         <a href="/" class="text-cyan-400 hover:text-cyan-300 text-sm">← Back to advisor</a>
         {% endif %}
         <h1 class="text-3xl font-bold mt-3">PC Upgrade Analysis</h1>
-        <p class="text-slate-400 mt-1">Recommended components now include pricing information when available.</p>
+        <p class="text-slate-400 mt-1">Technical recommendations are combined with current retail pricing when available.</p>
     </div>
 
     <!-- Current configuration -->
@@ -28,7 +28,7 @@
             <div class="bg-slate-800/60 rounded-xl p-4"><span class="text-slate-400">Motherboard</span><div class="font-semibold mt-1">{{ mb.name }}</div></div>
             <div class="bg-slate-800/60 rounded-xl p-4"><span class="text-slate-400">RAM</span><div class="font-semibold mt-1">{{ ram_gb }} GB</div></div>
             <div class="bg-slate-800/60 rounded-xl p-4"><span class="text-slate-400">Storage</span><div class="font-semibold mt-1">{{ storage_type }}</div></div>
-            <div class="bg-slate-800/60 rounded-xl p-4"><span class="text-slate-400">Budget</span><div class="font-semibold mt-1">{{ "{:,.0f}".format(budget) }} VND</div></div>
+            <div class="bg-slate-800/60 rounded-xl p-4"><span class="text-slate-400">Upgrade budget</span><div class="font-semibold mt-1">{% if budget > 0 %}{{ "{:,.0f}".format(budget) }} VND{% else %}No limit{% endif %}</div></div>
         </div>
     </section>
 
@@ -50,30 +50,69 @@
     </section>
 
     {% if compat.hardware_compatible %}
+    <!-- Final decision -->
+    {% set bd = recomms.budget_decision %}
+    <section class="rounded-2xl p-6 mb-6 border
+        {% if bd.status == 'not_needed' %}border-emerald-500/30 bg-emerald-500/5
+        {% elif bd.status == 'within_budget' or bd.status == 'no_limit' %}border-cyan-500/30 bg-cyan-500/5
+        {% elif bd.status == 'over_budget' %}border-amber-500/30 bg-amber-500/5
+        {% else %}border-slate-700 bg-slate-900{% endif %}">
+        <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-5">
+            <div>
+                <p class="text-xs uppercase tracking-wider text-slate-400">Upgrade decision</p>
+                <h2 class="text-xl font-bold mt-1
+                    {% if bd.status == 'not_needed' %}text-emerald-400
+                    {% elif bd.status == 'over_budget' %}text-amber-400
+                    {% else %}text-cyan-400{% endif %}">{{ bd.title }}</h2>
+                <p class="text-slate-300 mt-2 max-w-2xl">{{ bd.message }}</p>
+            </div>
+            {% if bd.selected and bd.selected.price_available %}
+            <div class="text-left md:text-right shrink-0">
+                <p class="text-xs text-slate-400">Selected upgrade</p>
+                <p class="font-bold">{{ bd.selected.name }}</p>
+                <p class="text-2xl font-bold text-cyan-400">{{ "{:,.0f}".format(bd.selected.price) }} VND</p>
+            </div>
+            {% endif %}
+        </div>
+
+        {% if bd.status == 'within_budget' %}
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-5">
+            <div class="bg-slate-900/50 rounded-xl p-4"><span class="text-xs text-slate-400">Budget</span><div class="font-bold mt-1">{{ "{:,.0f}".format(budget) }} VND</div></div>
+            <div class="bg-slate-900/50 rounded-xl p-4"><span class="text-xs text-slate-400">Remaining</span><div class="font-bold mt-1 text-emerald-400">{{ "{:,.0f}".format(bd.remaining_budget) }} VND</div></div>
+        </div>
+        {% elif bd.status == 'over_budget' %}
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-5">
+            <div class="bg-slate-900/50 rounded-xl p-4"><span class="text-xs text-slate-400">Budget</span><div class="font-bold mt-1">{{ "{:,.0f}".format(budget) }} VND</div></div>
+            <div class="bg-slate-900/50 rounded-xl p-4"><span class="text-xs text-slate-400">Cheapest suitable part</span><div class="font-bold mt-1">{{ "{:,.0f}".format(bd.cheapest_price) }} VND</div></div>
+            <div class="bg-slate-900/50 rounded-xl p-4"><span class="text-xs text-slate-400">Additional budget needed</span><div class="font-bold mt-1 text-amber-400">{{ "{:,.0f}".format(bd.additional_budget) }} VND</div></div>
+        </div>
+        {% elif bd.status == 'price_unavailable' %}
+        <p class="text-xs text-amber-400 mt-4">A technical upgrade is needed, but the current database has no retail price for a suitable {{ bd.primary_component }} option. The system will not treat missing prices as 0 VND.</p>
+        {% endif %}
+
+        {% if bd.selected and bd.selected.price_source %}
+        <p class="text-xs text-slate-500 mt-4">Price source: {{ bd.selected.price_source }}{% if bd.selected.price_updated_at %} · Updated {{ bd.selected.price_updated_at }}{% endif %}</p>
+        {% endif %}
+    </section>
+
     <!-- Price summary -->
     <section class="bg-slate-900 border border-cyan-500/20 rounded-2xl p-6 mb-8">
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
             <div>
-                <h2 class="text-lg font-bold">Estimated upgrade cost</h2>
-                <p class="text-xs text-slate-400 mt-1">The total uses prices available for the displayed recommendations.</p>
+                <h2 class="text-lg font-bold">Selected upgrade cost</h2>
+                <p class="text-xs text-slate-400 mt-1">Only the selected upgrade option is counted. Alternative CPU/GPU cards are not added together.</p>
             </div>
             <div class="text-2xl font-bold text-cyan-400">
-                {{ "{:,.0f}".format(recomms.total_known_price) }} VND
+                {% if recomms.total_price_complete %}{{ "{:,.0f}".format(recomms.total_known_price) }} VND{% else %}Price unavailable{% endif %}
             </div>
         </div>
-        {% if not recomms.total_price_complete %}
-            <p class="text-xs text-amber-400 mt-3">⚠ Some CPU/GPU prices are unavailable in the database, so the total is incomplete.</p>
-        {% endif %}
-        {% if budget > 0 %}
-            <p class="text-xs mt-2 {% if recomms.total_known_price <= budget %}text-emerald-400{% else %}text-amber-400{% endif %}">
-                Budget: {{ "{:,.0f}".format(budget) }} VND
-                {% if recomms.total_known_price <= budget %}· Current known-price total is within budget.{% else %}· Current known-price total exceeds the budget.{% endif %}
-            </p>
+        {% if not recomms.total_price_complete and decision.verdict_needed %}
+            <p class="text-xs text-amber-400 mt-3">⚠ Current retail pricing is incomplete for the technically recommended upgrade. Missing prices are not treated as 0 VND.</p>
         {% endif %}
     </section>
 
     <section class="bg-slate-900 border border-slate-800 rounded-2xl p-6 mb-6">
-        <h2 class="text-xl font-bold mb-6">Recommended upgrade plan</h2>
+        <h2 class="text-xl font-bold mb-6">Recommended upgrade options</h2>
 
         <!-- RAM -->
         {% if recomms.ram_recommendation %}
@@ -81,13 +120,10 @@
             <h3 class="text-sm font-bold uppercase tracking-wider text-slate-300 mb-3">RAM</h3>
             <div class="bg-slate-800/50 border border-slate-700 rounded-xl p-4">
                 <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                    <div>
-                        <h4 class="font-bold">{{ recomms.ram_recommendation.title }}</h4>
-                        <p class="text-sm text-slate-400 mt-1">{{ recomms.ram_recommendation.reason }}</p>
-                    </div>
-                    <div class="text-cyan-400 font-bold whitespace-nowrap">{{ recomms.ram_recommendation.price_label }}</div>
+                    <div><h4 class="font-bold">{{ recomms.ram_recommendation.title }}</h4><p class="text-sm text-slate-400 mt-1">{{ recomms.ram_recommendation.reason }}</p></div>
+                    <div class="text-amber-400 font-bold whitespace-nowrap">Price unavailable</div>
                 </div>
-                <p class="text-xs text-slate-500 mt-2">RAM pricing is not currently stored in the hardware database.</p>
+                {% if budget > 0 %}<p class="text-xs text-slate-500 mt-2">RAM price is not included in the budget calculation.</p>{% endif %}
             </div>
         </div>
         {% endif %}
@@ -98,13 +134,10 @@
             <h3 class="text-sm font-bold uppercase tracking-wider text-slate-300 mb-3">Storage</h3>
             <div class="bg-slate-800/50 border border-slate-700 rounded-xl p-4">
                 <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                    <div>
-                        <h4 class="font-bold">{{ recomms.storage_recommendation.title }}</h4>
-                        <p class="text-sm text-slate-400 mt-1">{{ recomms.storage_recommendation.reason }}</p>
-                    </div>
-                    <div class="text-cyan-400 font-bold whitespace-nowrap">{{ recomms.storage_recommendation.price_label }}</div>
+                    <div><h4 class="font-bold">{{ recomms.storage_recommendation.title }}</h4><p class="text-sm text-slate-400 mt-1">{{ recomms.storage_recommendation.reason }}</p></div>
+                    <div class="text-amber-400 font-bold whitespace-nowrap">Price unavailable</div>
                 </div>
-                <p class="text-xs text-slate-500 mt-2">Storage pricing is not currently stored in the hardware database.</p>
+                {% if budget > 0 %}<p class="text-xs text-slate-500 mt-2">Storage price is not included in the budget calculation.</p>{% endif %}
             </div>
         </div>
         {% endif %}
@@ -115,29 +148,23 @@
             {% if recomms.gpu_upgrades %}
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {% for g in recomms.gpu_upgrades %}
-                <div class="bg-slate-800/50 border border-slate-700 rounded-xl p-4">
+                <div class="bg-slate-800/50 border {% if g.within_budget %}border-emerald-500/40{% else %}border-slate-700{% endif %} rounded-xl p-4">
                     <div class="flex justify-between gap-2">
                         <span class="text-xs font-semibold text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded">+{{ g.gain_pct }}%</span>
                         <span class="text-xs text-slate-400">{{ g.vram }}GB VRAM</span>
                     </div>
                     <h4 class="font-bold mt-3">{{ g.name }}</h4>
-                    <div class="text-cyan-400 font-bold text-lg mt-2">
-                        {% if g.price_available %}₫{{ "{:,.0f}".format(g.price) }}{% else %}Price unavailable{% endif %}
+                    <div class="text-cyan-400 font-bold text-lg mt-2">{% if g.price_available %}{{ "{:,.0f}".format(g.price) }} VND{% else %}Price unavailable{% endif %}</div>
+                    {% if g.price_available and budget > 0 %}
+                    <div class="text-xs mt-2 {% if g.within_budget %}text-emerald-400{% else %}text-amber-400{% endif %}">
+                        {% if g.within_budget %}✓ Within budget · {{ "{:,.0f}".format(g.budget_delta) }} VND left{% else %}⚠ Over budget · {{ "{:,.0f}".format(-g.budget_delta) }} VND over{% endif %}
                     </div>
-                    {% if not g.price_available %}<p class="text-xs text-amber-400 mt-1">Price unavailable in database</p>{% endif %}
+                    {% elif not g.price_available %}<p class="text-xs text-amber-400 mt-2">Not included in budget calculation.</p>{% endif %}
                     <div class="text-xs mt-3 {% if g.psu_ok %}text-emerald-400{% else %}text-amber-400{% endif %}">{{ g.note }}</div>
-                    {% if not g.res_suitable %}<div class="text-xs text-amber-400 mt-1">Not ideal for {{ resolution }}</div>{% endif %}
-                    {% if budget > 0 and g.price_available %}
-                        <div class="text-xs mt-2 {% if g.within_budget %}text-emerald-400{% else %}text-amber-400{% endif %}">
-                            {% if g.within_budget %}Within budget{% else %}Over budget{% endif %}
-                        </div>
-                    {% endif %}
                 </div>
                 {% endfor %}
             </div>
-            {% else %}
-                <p class="text-sm text-slate-500 italic">No suitable GPU upgrade was found.</p>
-            {% endif %}
+            {% else %}<p class="text-sm text-slate-500 italic">No suitable GPU upgrade was found.</p>{% endif %}
         </div>
 
         <!-- CPU -->
@@ -146,28 +173,23 @@
             {% if recomms.cpu_upgrades %}
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {% for c in recomms.cpu_upgrades %}
-                <div class="bg-slate-800/50 border border-slate-700 rounded-xl p-4">
+                <div class="bg-slate-800/50 border {% if c.within_budget %}border-emerald-500/40{% else %}border-slate-700{% endif %} rounded-xl p-4">
                     <div class="flex justify-between gap-2">
                         <span class="text-xs font-semibold text-cyan-400 bg-cyan-500/10 px-2 py-1 rounded">+{{ c.gain_pct }}%</span>
                         <span class="text-xs text-slate-400">{{ c.cores }} cores</span>
                     </div>
                     <h4 class="font-bold mt-3">{{ c.name }}</h4>
-                    <div class="text-cyan-400 font-bold text-lg mt-2">
-                        {% if c.price_available %}₫{{ "{:,.0f}".format(c.price) }}{% else %}Price unavailable{% endif %}
+                    <div class="text-cyan-400 font-bold text-lg mt-2">{% if c.price_available %}{{ "{:,.0f}".format(c.price) }} VND{% else %}Price unavailable{% endif %}</div>
+                    {% if c.price_available and budget > 0 %}
+                    <div class="text-xs mt-2 {% if c.within_budget %}text-emerald-400{% else %}text-amber-400{% endif %}">
+                        {% if c.within_budget %}✓ Within budget · {{ "{:,.0f}".format(c.budget_delta) }} VND left{% else %}⚠ Over budget · {{ "{:,.0f}".format(-c.budget_delta) }} VND over{% endif %}
                     </div>
-                    {% if not c.price_available %}<p class="text-xs text-amber-400 mt-1">Price unavailable in database</p>{% endif %}
+                    {% elif not c.price_available %}<p class="text-xs text-amber-400 mt-2">Not included in budget calculation.</p>{% endif %}
                     <div class="text-xs mt-3 {% if c.psu_ok %}text-emerald-400{% else %}text-amber-400{% endif %}">{{ c.note }}</div>
-                    {% if budget > 0 and c.price_available %}
-                        <div class="text-xs mt-2 {% if c.within_budget %}text-emerald-400{% else %}text-amber-400{% endif %}">
-                            {% if c.within_budget %}Within budget{% else %}Over budget{% endif %}
-                        </div>
-                    {% endif %}
                 </div>
                 {% endfor %}
             </div>
-            {% else %}
-                <p class="text-sm text-slate-500 italic">No significantly stronger CPU on the same socket was found.</p>
-            {% endif %}
+            {% else %}<p class="text-sm text-slate-500 italic">No significantly stronger CPU on the same socket was found.</p>{% endif %}
         </div>
     </section>
     {% endif %}

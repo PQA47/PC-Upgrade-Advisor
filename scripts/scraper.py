@@ -1,6 +1,8 @@
 import sys
 import re
+import json
 from pathlib import Path
+from urllib.parse import urlparse
 from typing import Any, Optional
 
 import requests
@@ -13,7 +15,7 @@ import requests
 BASE_DIR = Path(__file__).resolve().parent.parent
 sys.path.append(str(BASE_DIR))
 
-from app.database.database import SessionLocal, engine, Base, ensure_schema_columns
+from app.database.database import SessionLocal, engine, Base
 
 try:
     from app.models.component import CPU, GPU, Motherboard
@@ -21,7 +23,6 @@ except ImportError:
     from app.models.components import CPU, GPU, Motherboard
 
 
-ensure_schema_columns()
 Base.metadata.create_all(bind=engine)
 
 
@@ -103,7 +104,8 @@ VTCOM_COLLECTIONS = {
     "gpu": "https://vtcom.com.vn/collections/vga",
 }
 
-VTCOM_MAX_PAGES = 10
+VTCOM_MAX_PAGES = 20
+VTCOM_PRODUCT_WORKERS = 12
 
 
 def normalize_price_model_name(name: str) -> str:
@@ -171,7 +173,136 @@ def gpu_price_key(name: str) -> str:
 
 
 def parse_vnd_price(value: Any) -> float:
-    """Convert VND text/numeric values to a positive float."""
+    """Convert VND text/numeric values to a positive VND amount."""
+    if value is None:
+        return 0.0
+    text = clean_text(value)
+    if not text:
+        return 0.0
+    numeric = re.sub(r"[^0-9.,-]", "", text).replace(",", "")
+    try:
+        if numeric.count(".") == 1:
+            price = float(numeric)
+            if price >= 100_000_000 and numeric.endswith(".00"):
+                price /= 100.0
+        else:
+            digits = re.sub(r"[^\d]", "", text)
+            if not digits:
+                return 0.0
+            price = float(digits)
+    except ValueError:
+        return 0.0
+    return price if price >= 100_000 else 0.0
+
+
+def _vtcom_meta_content(html: str, key: str) -> str:
+    """Read a meta tag regardless of property/name/content attribute order."""
+    for tag in re.findall(r"<meta\b[^>]*>", html, re.I):
+        attrs = dict(re.findall(r"([\w:-]+)\s*=\s*[\"']([^\"']*)[\"']", tag, re.I))
+        if (attrs.get("property", "").lower() == key.lower()
+                or attrs.get("name", "").lower() == key.lower()):
+            return clean_text(attrs.get("content", ""))
+    return ""
+
+
+def _vtcom_slug_name(url: str) -> str:
+    """Create a searchable product name from a VTCOM /products/... slug."""
+    slug = urlparse(url).path.rstrip("/").split("/products/", 1)[-1]
+    return clean_text(slug.replace("-", " "))
+
+def _vtcom_product_urls_from_collection(html: str) -> list[str]:
+    """Extract unique Shopify /products/... links from a VTCOM collection page."""
+    found = []
+
+    for href in re.findall(r'href=["\']([^"\']+)["\']', html, re.I):
+        href = href.split("#", 1)[0].split("?", 1)[0]
+        if not href.startswith("/products/"):
+            continue
+        if href.rstrip("/") not in found:
+            found.append(href.rstrip("/"))
+
+    return found
+
+
+def _vtcom_product_urls_from_sitemap() -> list[str]:
+    """Discover VTCOM product URLs from Shopify's sitemap index.
+
+    Collection pagination can omit older products from the first few pages.
+    Shopify's sitemap is a site-wide product inventory, so it is used as the
+    primary discovery source and collection pages remain a fallback.
+    """
+    sitemap_index_url = "https://vtcom.com.vn/sitemap.xml"
+    base = "https://vtcom.com.vn"
+
+    def extract_locs(xml_text: str) -> list[str]:
+        return [
+            loc.strip()
+            for loc in re.findall(r"<loc>\s*(.*?)\s*</loc>", xml_text, re.I | re.S)
+            if loc.strip()
+        ]
+
+    try:
+        response = requests.get(
+            sitemap_index_url,
+            headers={**HEADERS, "Accept": "application/xml,text/xml,*/*;q=0.8"},
+            timeout=TIMEOUT,
+        )
+        response.raise_for_status()
+        locs = extract_locs(response.text)
+    except Exception as exc:
+        print(f"\n⚠️ VTCOM sitemap discovery failed: {exc}")
+        return []
+
+    # A Shopify sitemap index normally contains sitemap_products_*.xml files.
+    product_sitemaps = [
+        loc for loc in locs
+        if "sitemap_products" in loc.lower()
+    ]
+
+    # Be defensive if VTCOM returns product URLs directly instead of an index.
+    direct_products = []
+    for loc in locs:
+        parsed = urlparse(loc)
+        path = parsed.path.rstrip("/")
+        if path.startswith("/products/"):
+            direct_products.append(path)
+
+    if not product_sitemaps:
+        return list(dict.fromkeys(direct_products))
+
+    found = []
+
+    for sitemap_url in product_sitemaps:
+        try:
+            response = requests.get(
+                sitemap_url,
+                headers={**HEADERS, "Accept": "application/xml,text/xml,*/*;q=0.8"},
+                timeout=TIMEOUT,
+            )
+            response.raise_for_status()
+        except Exception as exc:
+            print(f"\n⚠️ VTCOM product sitemap failed: {sitemap_url} ({exc})")
+            continue
+
+        for loc in extract_locs(response.text):
+            parsed = urlparse(loc)
+            path = parsed.path.rstrip("/")
+            if not path.startswith("/products/"):
+                continue
+            if path not in found:
+                found.append(path)
+
+    return found
+
+
+def _vtcom_shopify_variant_price(value: Any) -> float:
+    """Parse Shopify product.js variant prices into VND.
+
+    Shopify exposes price values in the currency subunit. For currencies
+    without subunits such as VND, Shopify documents that extra decimal places
+    are appended. HTML structured price metadata is preferred, but this keeps
+    the .js fallback from turning 3,090,000 VND into 309,000,000.
+    """
     if value is None:
         return 0.0
 
@@ -179,73 +310,185 @@ def parse_vnd_price(value: Any) -> float:
     if not text:
         return 0.0
 
-    # 5,990,000₫ / 5.990.000 đ / 5990000
-    digits = re.sub(r"[^\d]", "", text)
-    if not digits:
-        return 0.0
+    try:
+        number = float(text.replace(",", ""))
+    except ValueError:
+        return parse_vnd_price(text)
+
+    # Shopify's VND subunit representation appends two decimal places.
+    if number >= 100_000_000:
+        number /= 100.0
+
+    return number if number >= 100_000 else 0.0
+
+
+def _vtcom_product_from_detail(url: str) -> Optional[dict]:
+    """Read one VTCOM product detail page and return its own title + price."""
+    # Prefer the product page's structured metadata because it expresses the
+    # displayed VND amount directly and avoids Shopify subunit conversions.
+    try:
+        response = requests.get(
+            url,
+            headers={**HEADERS, "Accept": "text/html,application/xhtml+xml"},
+            timeout=TIMEOUT,
+        )
+        response.raise_for_status()
+        html = response.text
+
+        title = _vtcom_meta_content(html, "og:title")
+        price_text = _vtcom_meta_content(html, "product:price:amount")
+        name = normalize_name(title) if title else ""
+        price = parse_vnd_price(price_text) if price_text else 0.0
+
+        if not name or price <= 0:
+            for block in re.findall(
+                r'<script[^>]+type=["\']application/ld\+json["\'][^>]*>(.*?)</script>',
+                html, re.I | re.S,
+            ):
+                try:
+                    payload = json.loads(block)
+                except Exception:
+                    continue
+                candidates = payload if isinstance(payload, list) else [payload]
+                for item in candidates:
+                    if not isinstance(item, dict):
+                        continue
+                    if not name and item.get("name"):
+                        name = normalize_name(item.get("name"))
+                    offers = item.get("offers", {})
+                    if isinstance(offers, list):
+                        offers = offers[0] if offers else {}
+                    if price <= 0 and isinstance(offers, dict):
+                        price = parse_vnd_price(offers.get("price"))
+                    if name and price > 0:
+                        break
+                if name and price > 0:
+                    break
+
+        if price > 0 and not name:
+            name = normalize_name(_vtcom_slug_name(url))
+
+        if name and price > 0:
+            return {"name": name, "price": price}
+
+    except Exception:
+        pass
+
+    # Fallback: Shopify's public product.js endpoint. Shopify documents price
+    # values in currency subunits; VND has no minor unit, so the endpoint can
+    # append two decimal places. Keep this fallback separate from HTML parsing.
+    js_url = url.rstrip("/") + ".js"
 
     try:
-        price = float(digits)
-    except ValueError:
-        return 0.0
+        response = requests.get(
+            js_url,
+            headers={
+                **HEADERS,
+                "Accept": "application/json,text/javascript,*/*;q=0.8",
+            },
+            timeout=TIMEOUT,
+        )
+        response.raise_for_status()
+        payload = response.json()
 
-    # Retail VND prices should be meaningful hardware prices.
-    return price if price >= 100_000 else 0.0
+        name = normalize_name(payload.get("title", ""))
+        variants = payload.get("variants", [])
+        available = [v for v in variants if v.get("available", True)]
+        candidates = available or variants
+        prices = [
+            _vtcom_shopify_variant_price(v.get("price"))
+            for v in candidates
+        ]
+        prices = [p for p in prices if p > 0]
+
+        if name and prices:
+            return {"name": name, "price": min(prices)}
+
+    except Exception:
+        pass
+
+    return None
 
 
-def fetch_vtcom_json_collection(url: str, kind: str) -> list[dict]:
-    """Fetch Shopify collection pages concurrently and return {name, price} records."""
+def fetch_vtcom_collection_products(url: str, kind: str) -> list[dict]:
+    """
+    Discover products from the VTCOM collection HTML, then fetch each product
+    detail page independently for its own price.
+
+    We intentionally do NOT use /search or collection-card prices because those
+    can expose neighboring/installment prices and caused incorrect model matches.
+    """
     from concurrent.futures import ThreadPoolExecutor, as_completed
 
-    PAGE_WORKERS = 6
+    product_paths = []
 
-    def fetch_page(page):
-        endpoint = f"{url}/products.json?limit=250&page={page}"
+    print(f"   Discovering {kind.upper()} product links from VTCOM sitemap...")
+    sitemap_paths = _vtcom_product_urls_from_sitemap()
+    for path in sitemap_paths:
+        if path not in product_paths:
+            product_paths.append(path)
+
+    if sitemap_paths:
+        print(f"   Sitemap: +{len(sitemap_paths)} product links (total {len(product_paths)})")
+    else:
+        print("   Sitemap: no product links found; using collection pages only")
+
+    print(f"   Discovering additional {kind.upper()} product links from VTCOM collection...")
+
+    for page in range(1, VTCOM_MAX_PAGES + 1):
+        page_url = url if page == 1 else f"{url}?page={page}"
 
         try:
             response = requests.get(
-                endpoint,
-                headers={
-                    **HEADERS,
-                    "Accept": "application/json,text/html;q=0.9,*/*;q=0.8",
-                },
+                page_url,
+                headers={**HEADERS, "Accept": "text/html,application/xhtml+xml"},
                 timeout=TIMEOUT,
             )
             response.raise_for_status()
-            payload = response.json()
-            return page, payload.get("products", [])
         except Exception as exc:
-            print(f"\n⚠️ VTCOM {kind} page {page} failed: {exc}")
-            return page, []
+            print(f"\n⚠️ VTCOM {kind} collection page {page} failed: {exc}")
+            break
 
+        page_paths = _vtcom_product_urls_from_collection(response.text)
+        before = len(product_paths)
+
+        for path in page_paths:
+            if path not in product_paths:
+                product_paths.append(path)
+
+        new_count = len(product_paths) - before
+        print(f"   Page {page}: +{new_count} product links (total {len(product_paths)})")
+
+        # Do not stop on a zero-new-link page: VTCOM can reorder products or
+        # repeat links while older products appear on later pages. The sitemap
+        # is already the main inventory, so these pages are only a supplement.
+
+    if not product_paths:
+        return []
+
+    base = "https://vtcom.com.vn"
     products = []
+    completed = 0
 
-    # Shopify pagination is independent, so fetch the first batch concurrently.
-    with ThreadPoolExecutor(max_workers=PAGE_WORKERS) as executor:
-        futures = [
-            executor.submit(fetch_page, page)
-            for page in range(1, VTCOM_MAX_PAGES + 1)
-        ]
+    print(f"   Fetching {len(product_paths)} VTCOM {kind.upper()} detail pages...")
+
+    with ThreadPoolExecutor(max_workers=VTCOM_PRODUCT_WORKERS) as executor:
+        futures = {
+            executor.submit(_vtcom_product_from_detail, base + path): path
+            for path in product_paths
+        }
 
         for future in as_completed(futures):
-            _, page_products = future.result()
+            completed += 1
+            try:
+                product = future.result()
+                if product:
+                    products.append(product)
+            except Exception:
+                pass
 
-            for product in page_products:
-                name = normalize_name(product.get("title", ""))
-                if not name:
-                    continue
-
-                prices = [
-                    parse_vnd_price(v.get("price"))
-                    for v in product.get("variants", [])
-                ]
-                prices = [p for p in prices if p > 0]
-
-                if prices:
-                    products.append({
-                        "name": name,
-                        "price": min(prices),
-                    })
+            if completed % 25 == 0 or completed == len(product_paths):
+                print(f"   Detail pages: {completed}/{len(product_paths)}")
 
     return products
 
@@ -261,7 +504,7 @@ def scrape_vtcom_prices(kind: str) -> dict[str, float]:
 
     print(f"\n⏳ Fetching current VTCOM {kind.upper()} retail prices...")
 
-    products = fetch_vtcom_json_collection(url, kind)
+    products = fetch_vtcom_collection_products(url, kind)
 
     if not products:
         print(f"⚠️ No VTCOM {kind.upper()} prices were found.")
@@ -284,6 +527,15 @@ def scrape_vtcom_prices(kind: str) -> dict[str, float]:
     print(
         f"✓ Found {len(prices)} current VTCOM {kind.upper()} model prices."
     )
+
+    if kind == "cpu":
+        for target in (
+            "Intel Core i5-10400F",
+            "Intel Core i5-11400F",
+            "Intel Core i7-10700K",
+        ):
+            key = cpu_price_key(target)
+            print(f"   Legacy CPU check: {target} -> {prices.get(key, 0):,.0f} VND")
 
     return prices
 

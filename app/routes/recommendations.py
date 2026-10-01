@@ -54,6 +54,7 @@ async def analyze(
     psu_watt: int = Form(...),
     budget: float = Form(0)
 ):
+    budget = max(float(budget or 0), 0.0)
     db = SessionLocal()
     try:
         clean_cpu = cpu_name.strip()
@@ -155,7 +156,21 @@ async def analyze(
                 "cpu_upgrades": [],
                 "gpu_upgrades": [],
                 "ram_recommendation": None,
-                "storage_recommendation": None
+                "storage_recommendation": None,
+                "budget_decision": {
+                    "status": "hardware_incompatible",
+                    "title": "FIX HARDWARE COMPATIBILITY FIRST",
+                    "message": "Resolve the CPU/motherboard compatibility issue before evaluating upgrade prices.",
+                    "selected": None,
+                    "budget": budget,
+                    "primary_component": None,
+                    "upgrade_needed": True,
+                    "cheapest_price": None,
+                    "additional_budget": None,
+                    "remaining_budget": None,
+                },
+                "total_known_price": 0.0,
+                "total_price_complete": False,
             }
 
         # 7. Save the analysis for logged-in users.

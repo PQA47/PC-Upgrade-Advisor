@@ -8,3 +8,5 @@ python-multipart>=0.0.9
 pwdlib[argon2]
 itsdangerous
 python-dotenv>=1.0.1
+
+beautifulsoup4>=4.12.3
