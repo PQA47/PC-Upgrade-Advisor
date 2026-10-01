@@ -1,8 +1,12 @@
 import sys
 import re
+<<<<<<< HEAD
 import json
 from pathlib import Path
 from urllib.parse import urlparse
+=======
+from pathlib import Path
+>>>>>>> c984055 (feat(frontend): complete UI for auth, results, index and history)
 from typing import Any, Optional
 
 import requests
@@ -15,7 +19,11 @@ import requests
 BASE_DIR = Path(__file__).resolve().parent.parent
 sys.path.append(str(BASE_DIR))
 
+<<<<<<< HEAD
 from app.database.database import SessionLocal, engine, Base
+=======
+from app.database.database import SessionLocal, engine, Base, ensure_schema_columns
+>>>>>>> c984055 (feat(frontend): complete UI for auth, results, index and history)
 
 try:
     from app.models.component import CPU, GPU, Motherboard
@@ -23,6 +31,10 @@ except ImportError:
     from app.models.components import CPU, GPU, Motherboard
 
 
+<<<<<<< HEAD
+=======
+ensure_schema_columns()
+>>>>>>> c984055 (feat(frontend): complete UI for auth, results, index and history)
 Base.metadata.create_all(bind=engine)
 
 
@@ -104,8 +116,12 @@ VTCOM_COLLECTIONS = {
     "gpu": "https://vtcom.com.vn/collections/vga",
 }
 
+<<<<<<< HEAD
 VTCOM_MAX_PAGES = 20
 VTCOM_PRODUCT_WORKERS = 12
+=======
+VTCOM_MAX_PAGES = 10
+>>>>>>> c984055 (feat(frontend): complete UI for auth, results, index and history)
 
 
 def normalize_price_model_name(name: str) -> str:
@@ -173,6 +189,7 @@ def gpu_price_key(name: str) -> str:
 
 
 def parse_vnd_price(value: Any) -> float:
+<<<<<<< HEAD
     """Convert VND text/numeric values to a positive VND amount."""
     if value is None:
         return 0.0
@@ -489,6 +506,83 @@ def fetch_vtcom_collection_products(url: str, kind: str) -> list[dict]:
 
             if completed % 25 == 0 or completed == len(product_paths):
                 print(f"   Detail pages: {completed}/{len(product_paths)}")
+=======
+    """Convert VND text/numeric values to a positive float."""
+    if value is None:
+        return 0.0
+
+    text = clean_text(value)
+    if not text:
+        return 0.0
+
+    # 5,990,000₫ / 5.990.000 đ / 5990000
+    digits = re.sub(r"[^\d]", "", text)
+    if not digits:
+        return 0.0
+
+    try:
+        price = float(digits)
+    except ValueError:
+        return 0.0
+
+    # Retail VND prices should be meaningful hardware prices.
+    return price if price >= 100_000 else 0.0
+
+
+def fetch_vtcom_json_collection(url: str, kind: str) -> list[dict]:
+    """Fetch Shopify collection pages concurrently and return {name, price} records."""
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+
+    PAGE_WORKERS = 6
+
+    def fetch_page(page):
+        endpoint = f"{url}/products.json?limit=250&page={page}"
+
+        try:
+            response = requests.get(
+                endpoint,
+                headers={
+                    **HEADERS,
+                    "Accept": "application/json,text/html;q=0.9,*/*;q=0.8",
+                },
+                timeout=TIMEOUT,
+            )
+            response.raise_for_status()
+            payload = response.json()
+            return page, payload.get("products", [])
+        except Exception as exc:
+            print(f"\n⚠️ VTCOM {kind} page {page} failed: {exc}")
+            return page, []
+
+    products = []
+
+    # Shopify pagination is independent, so fetch the first batch concurrently.
+    with ThreadPoolExecutor(max_workers=PAGE_WORKERS) as executor:
+        futures = [
+            executor.submit(fetch_page, page)
+            for page in range(1, VTCOM_MAX_PAGES + 1)
+        ]
+
+        for future in as_completed(futures):
+            _, page_products = future.result()
+
+            for product in page_products:
+                name = normalize_name(product.get("title", ""))
+                if not name:
+                    continue
+
+                prices = [
+                    parse_vnd_price(v.get("price"))
+                    for v in product.get("variants", [])
+                ]
+                prices = [p for p in prices if p > 0]
+
+                if prices:
+                    products.append({
+                        "name": name,
+                        "price": min(prices),
+                    })
+>>>>>>> c984055 (feat(frontend): complete UI for auth, results, index and history)
 
     return products
 
@@ -504,7 +598,11 @@ def scrape_vtcom_prices(kind: str) -> dict[str, float]:
 
     print(f"\n⏳ Fetching current VTCOM {kind.upper()} retail prices...")
 
+<<<<<<< HEAD
     products = fetch_vtcom_collection_products(url, kind)
+=======
+    products = fetch_vtcom_json_collection(url, kind)
+>>>>>>> c984055 (feat(frontend): complete UI for auth, results, index and history)
 
     if not products:
         print(f"⚠️ No VTCOM {kind.upper()} prices were found.")
@@ -528,6 +626,7 @@ def scrape_vtcom_prices(kind: str) -> dict[str, float]:
         f"✓ Found {len(prices)} current VTCOM {kind.upper()} model prices."
     )
 
+<<<<<<< HEAD
     if kind == "cpu":
         for target in (
             "Intel Core i5-10400F",
@@ -537,6 +636,8 @@ def scrape_vtcom_prices(kind: str) -> dict[str, float]:
             key = cpu_price_key(target)
             print(f"   Legacy CPU check: {target} -> {prices.get(key, 0):,.0f} VND")
 
+=======
+>>>>>>> c984055 (feat(frontend): complete UI for auth, results, index and history)
     return prices
 
 
