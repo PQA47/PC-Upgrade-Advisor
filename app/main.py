@@ -80,7 +80,16 @@ app.include_router(history.router)
 
 @app.get("/")
 def index(request: Request):
-    """Home page: load all components from SQLite and render them into the search form."""
+    """First page: let the user choose what they want to upgrade."""
+    return templates.TemplateResponse(
+        request=request,
+        name="device_selection.html"
+    )
+
+
+@app.get("/pc-upgrade")
+def pc_upgrade(request: Request):
+    """PC upgrade form."""
     db = SessionLocal()
     try:
         cpus = db.query(CPU).order_by(CPU.score.desc()).all()
@@ -98,7 +107,6 @@ def index(request: Request):
         )
     finally:
         db.close()
-
 
 if __name__ == "__main__":
     import uvicorn
