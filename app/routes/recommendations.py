@@ -54,10 +54,7 @@ async def analyze(
     psu_watt: int = Form(...),
     budget: float = Form(0)
 ):
-<<<<<<< HEAD
     budget = max(float(budget or 0), 0.0)
-=======
->>>>>>> c984055 (feat(frontend): complete UI for auth, results, index and history)
     db = SessionLocal()
     try:
         clean_cpu = cpu_name.strip()
@@ -159,7 +156,6 @@ async def analyze(
                 "cpu_upgrades": [],
                 "gpu_upgrades": [],
                 "ram_recommendation": None,
-<<<<<<< HEAD
                 "storage_recommendation": None,
                 "budget_decision": {
                     "status": "hardware_incompatible",
@@ -175,9 +171,6 @@ async def analyze(
                 },
                 "total_known_price": 0.0,
                 "total_price_complete": False,
-=======
-                "storage_recommendation": None
->>>>>>> c984055 (feat(frontend): complete UI for auth, results, index and history)
             }
 
         # 7. Save the analysis for logged-in users.

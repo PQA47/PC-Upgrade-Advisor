@@ -1,30 +1,21 @@
 from typing import Dict, Any
 
 
-<<<<<<< HEAD
 def _price_info(price, budget: float = 0.0, source=None, updated_at=None):
     """Return a consistent price payload. Missing price is never treated as free."""
-=======
-def _price_info(price, budget: float = 0.0):
-    """Return a consistent price payload for Jinja templates."""
->>>>>>> c984055 (feat(frontend): complete UI for auth, results, index and history)
     try:
         value = float(price or 0)
     except (TypeError, ValueError):
         value = 0.0
 
     available = value > 0
-<<<<<<< HEAD
     within_budget = bool(available and budget > 0 and value <= budget)
     over_budget = bool(available and budget > 0 and value > budget)
 
-=======
->>>>>>> c984055 (feat(frontend): complete UI for auth, results, index and history)
     return {
         "price": value,
         "price_available": available,
         "price_label": f"{value:,.0f} VND" if available else "Price unavailable",
-<<<<<<< HEAD
         "price_source": source or "",
         "price_updated_at": updated_at.isoformat() if hasattr(updated_at, "isoformat") else (str(updated_at) if updated_at else ""),
         "within_budget": within_budget,
@@ -48,78 +39,77 @@ def _select_candidates(candidates, limit=3):
 
 
 def _budget_summary(primary_type, candidates, budget, upgrade_needed):
-    priced = [c for c in candidates if c["price_available"] and c.get("psu_ok", True)]
-    affordable = [c for c in priced if budget > 0 and c["price"] <= budget]
-
-    summary = {
-        "primary_component": primary_type,
-        "upgrade_needed": bool(upgrade_needed),
-        "budget": float(budget or 0),
-        "status": "no_limit" if budget <= 0 and upgrade_needed else "not_needed" if not upgrade_needed else "price_unavailable",
-        "title": "",
-        "message": "",
-        "selected": None,
-        "cheapest_price": min((c["price"] for c in priced), default=None),
-        "additional_budget": None,
-        "remaining_budget": None,
-    }
-
     if not upgrade_needed:
-        summary["title"] = "NO UPGRADE REQUIRED"
-        summary["message"] = "The current configuration meets the selected requirements."
-        return summary
+        return {
+            "status": "not_needed",
+            "title": "SYSTEM IS WELL-BALANCED",
+            "message": "No major upgrades are strictly required for your workload at this resolution.",
+            "selected": None,
+            "budget": budget,
+            "primary_component": primary_type,
+            "upgrade_needed": False,
+            "cheapest_price": None,
+            "additional_budget": None,
+            "remaining_budget": None,
+        }
 
-    if primary_type not in {"CPU", "GPU"}:
-        summary["status"] = "price_unavailable"
-        summary["title"] = "UPGRADE NEEDED, PRICE UNAVAILABLE"
-        summary["message"] = f"The primary {primary_type} upgrade does not have a retail price in the current database, so the budget cannot be evaluated for it yet."
-        return summary
+    priced = [c for c in candidates if c["price_available"]]
+    if not priced:
+        return {
+            "status": "no_pricing",
+            "title": "PRICING DATA UNAVAILABLE",
+            "message": f"We found matching {primary_type} upgrades, but pricing data is not currently stored in the database.",
+            "selected": candidates[0] if candidates else None,
+            "budget": budget,
+            "primary_component": primary_type,
+            "upgrade_needed": True,
+            "cheapest_price": None,
+            "additional_budget": None,
+            "remaining_budget": None,
+        }
 
-    if budget <= 0:
-        summary["status"] = "no_limit"
-        summary["title"] = "UPGRADE RECOMMENDED"
-        if priced:
-            chosen = priced[0]
-            summary["selected"] = chosen
-            summary["message"] = f"A suitable {primary_type.upper()} upgrade is available. No budget limit was specified."
+    cheapest = min(priced, key=lambda x: x["price"])
+    selected = None
+
+    if budget > 0:
+        affordable = [c for c in priced if c["within_budget"]]
+        if affordable:
+            selected = max(affordable, key=lambda x: x["score"])
         else:
-            summary["message"] = "An upgrade is technically recommended, but no current retail price is available for a suitable option."
-        return summary
+            selected = cheapest
+    else:
+        selected = cheapest
 
-    if affordable:
-        chosen = min(affordable, key=lambda c: (-c.get("score", 0), c["price"]))
-        summary["status"] = "within_budget"
-        summary["title"] = "UPGRADE FITS YOUR BUDGET"
-        summary["selected"] = chosen
-        summary["remaining_budget"] = budget - chosen["price"]
-        summary["message"] = f"A suitable {primary_type.upper()} upgrade is available within your budget."
-        return summary
+    additional_budget = None
+    remaining_budget = None
+    status = "ok"
 
-    if priced:
-        cheapest = min(priced, key=lambda c: c["price"])
-        summary["status"] = "over_budget"
-        summary["title"] = "UPGRADE NEEDED, BUT OVER BUDGET"
-        summary["selected"] = cheapest
-        summary["additional_budget"] = max(0, cheapest["price"] - budget)
-        summary["message"] = f"The cheapest suitable {primary_type.upper()} upgrade is over your budget."
-        return summary
+    if budget > 0 and selected and selected["price_available"]:
+        if selected["price"] <= budget:
+            status = "within_budget"
+            remaining_budget = budget - selected["price"]
+        else:
+            status = "over_budget"
+            additional_budget = selected["price"] - budget
 
-    summary["status"] = "price_unavailable"
-    summary["title"] = "UPGRADE NEEDED, PRICE UNAVAILABLE"
-    summary["message"] = "A technical upgrade is recommended, but current retail pricing is unavailable for suitable parts."
-    return summary
-
-
-=======
-        "within_budget": bool(available and budget > 0 and value <= budget),
+    return {
+        "status": status,
+        "title": f"RECOMMENDED {primary_type.upper()} UPGRADE",
+        "message": f"Best matching upgrade for your budget and {primary_type} bottleneck.",
+        "selected": selected,
+        "budget": budget,
+        "primary_component": primary_type,
+        "upgrade_needed": True,
+        "cheapest_price": cheapest["price"],
+        "additional_budget": additional_budget,
+        "remaining_budget": remaining_budget,
     }
 
 
->>>>>>> c984055 (feat(frontend): complete UI for auth, results, index and history)
 def get_recommendations(
-    db,
-    cpu_model,
-    gpu_model,
+    db: Any,
+    cpu_model: Any,
+    gpu_model: Any,
     current_cpu: dict,
     current_gpu: dict,
     current_mb: dict,
@@ -136,37 +126,21 @@ def get_recommendations(
         "gpu_upgrades": [],
         "ram_recommendation": None,
         "storage_recommendation": None,
-<<<<<<< HEAD
         "budget_decision": None,
         "total_known_price": 0.0,
         "total_price_complete": False,
     }
 
-    # RAM/storage are still technical recommendations only because their prices
-    # are not stored in the current component database.
     if storage_type == "HDD":
         recommendations["storage_recommendation"] = {
             "title": "Upgrade to an NVMe M.2 SSD",
             "reason": "Moving the OS from HDD to NVMe SSD can improve boot times and overall system responsiveness.",
             "price_label": "Price unavailable",
             "price_available": False,
-=======
-        "total_known_price": 0.0,
-        "total_price_complete": True,
-    }
-
-    # 1. Storage recommendations
-    if storage_type == "HDD":
-        recommendations["storage_recommendation"] = {
-            "title": "Upgrade to an NVMe M.2 SSD",
-            "reason": "Moving the OS from HDD to NVMe SSD can improve boot times and overall system responsiveness by 5-10x.",
-            "price_label": "Price not stored in database",
->>>>>>> c984055 (feat(frontend): complete UI for auth, results, index and history)
         }
     elif storage_type == "SATA SSD" and usage in ["editing", "ai"]:
         recommendations["storage_recommendation"] = {
             "title": "Add an NVMe Gen 4 drive",
-<<<<<<< HEAD
             "reason": "Video editing and AI model loading involve heavy sustained I/O.",
             "price_label": "Price unavailable",
             "price_available": False,
@@ -186,36 +160,11 @@ def get_recommendations(
     current_gpu_tdp = current_gpu.get("tdp", 0) or 0
     current_cpu_tdp = current_cpu.get("tdp", 0) or 0
 
-    # CPU candidates: same socket and at least 15% benchmark improvement.
-=======
-            "reason": "Video editing and AI model loading involve heavy sustained I/O, and NVMe Gen 4 minimizes file access wait time.",
-            "price_label": "Price not stored in database",
-        }
-
-    # 2. RAM recommendations
-    target_ram = 16
-    if usage in ["editing", "programming", "ai"]:
-        target_ram = 32
-
-    if ram_gb < target_ram:
-        recommendations["ram_recommendation"] = {
-            "title": f"Upgrade to {target_ram}GB RAM ({current_mb.get('ram_type', 'DDR4')})",
-            "reason": f"The current {ram_gb}GB capacity is not enough for smooth {usage.upper()} workloads. The current motherboard supports {current_mb.get('ram_type', 'DDR4')} memory.",
-            "price_label": "Price not stored in database",
-        }
-
-    # 3. CPU recommendations (same socket to keep the motherboard)
-    current_cpu_score = current_cpu.get("score", 0) or 0
-    current_gpu_tdp = current_gpu.get("tdp", 0) or 0
-    current_cpu_tdp = current_cpu.get("tdp", 0) or 0
-
->>>>>>> c984055 (feat(frontend): complete UI for auth, results, index and history)
     candidate_cpus = db.query(cpu_model).filter(
         cpu_model.socket == current_mb["socket"],
         cpu_model.score > current_cpu_score * 1.15,
     ).order_by(cpu_model.score.asc()).all()
 
-<<<<<<< HEAD
     cpu_candidates = []
     for cand in candidate_cpus:
         gain_pct = round(((cand.score - current_cpu_score) / current_cpu_score) * 100) if current_cpu_score else 0
@@ -228,15 +177,6 @@ def get_recommendations(
             getattr(cand, "price_updated_at", None),
         )
         cpu_candidates.append({
-=======
-    for cand in candidate_cpus[:3]:
-        gain_pct = round(((cand.score - current_cpu_score) / current_cpu_score) * 100) if current_cpu_score else 0
-        needed_psu = (cand.tdp or 0) + current_gpu_tdp + 150
-        psu_ok = psu_watt >= needed_psu
-        price = _price_info(getattr(cand, "price", 0), budget)
-
-        recommendations["cpu_upgrades"].append({
->>>>>>> c984055 (feat(frontend): complete UI for auth, results, index and history)
             "name": cand.name,
             "socket": cand.socket,
             "cores": cand.cores,
@@ -249,25 +189,14 @@ def get_recommendations(
             **price,
         })
 
-<<<<<<< HEAD
     recommendations["cpu_upgrades"] = _select_candidates(cpu_candidates)
 
-    # GPU candidates: at least 20% improvement and suitable VRAM for resolution.
     candidate_gpus = db.query(gpu_model).filter(
         gpu_model.score > current_gpu_score * 1.2
-=======
-    # 4. GPU recommendations
-    candidate_gpus = db.query(gpu_model).filter(
-        gpu_model.score > (current_gpu.get("score", 0) or 0) * 1.2
->>>>>>> c984055 (feat(frontend): complete UI for auth, results, index and history)
     ).order_by(gpu_model.score.asc()).all()
 
     gpu_candidates = []
     for cand in candidate_gpus:
-<<<<<<< HEAD
-=======
-        current_gpu_score = current_gpu.get("score", 0) or 0
->>>>>>> c984055 (feat(frontend): complete UI for auth, results, index and history)
         gain_pct = round(((cand.score - current_gpu_score) / current_gpu_score) * 100) if current_gpu_score else 0
         needed_psu = current_cpu_tdp + (cand.tdp or 0) + 150
         psu_ok = psu_watt >= needed_psu
@@ -278,7 +207,6 @@ def get_recommendations(
         elif resolution == "4k" and (cand.vram or 0) < 12:
             res_suitable = False
 
-<<<<<<< HEAD
         if not res_suitable:
             continue
 
@@ -288,10 +216,6 @@ def get_recommendations(
             getattr(cand, "price_source", None),
             getattr(cand, "price_updated_at", None),
         )
-=======
-        price = _price_info(getattr(cand, "price", 0), budget)
-
->>>>>>> c984055 (feat(frontend): complete UI for auth, results, index and history)
         gpu_candidates.append({
             "name": cand.name,
             "vram": cand.vram,
@@ -300,20 +224,13 @@ def get_recommendations(
             "gain_pct": gain_pct,
             "psu_ok": psu_ok,
             "needed_psu": needed_psu,
-<<<<<<< HEAD
             "res_suitable": True,
-=======
-            "res_suitable": res_suitable,
->>>>>>> c984055 (feat(frontend): complete UI for auth, results, index and history)
             "note": f"Compatible with the current {psu_watt}W PSU" if psu_ok else f"Requires at least {needed_psu}W PSU",
             **price,
         })
 
-<<<<<<< HEAD
     recommendations["gpu_upgrades"] = _select_candidates(gpu_candidates)
 
-    # The alternatives displayed on the page are NOT a shopping cart. Never sum
-    # all CPU and GPU recommendation cards.
     primary_type = decision.get("primary_component") or decision.get("bottleneck_component") or "GPU"
     if primary_type == "CPU":
         budget_candidates = cpu_candidates
@@ -329,34 +246,8 @@ def get_recommendations(
         decision.get("verdict_needed", False),
     )
 
-    # Show the selected upgrade price as the headline cost. It is one option,
-    # not the sum of all alternatives.
     selected = recommendations["budget_decision"].get("selected")
     recommendations["total_known_price"] = selected["price"] if selected and selected["price_available"] else 0.0
     recommendations["total_price_complete"] = bool(selected and selected["price_available"])
 
-=======
-    # Prefer resolution-suitable and priced options when possible, while still
-    # returning recommendations if the database has no prices.
-    suitable = [g for g in gpu_candidates if g["res_suitable"]]
-    priced_suitable = [g for g in suitable if g["price_available"]]
-    if priced_suitable:
-        recommendations["gpu_upgrades"] = priced_suitable[:3]
-    else:
-        recommendations["gpu_upgrades"] = suitable[:3]
-
-    # The displayed CPU/GPU cards are alternatives, not parts that should all
-    # be purchased together. Therefore don't sum all recommendation cards.
-    known_prices = [
-        item["price"]
-        for item in recommendations["cpu_upgrades"] + recommendations["gpu_upgrades"]
-        if item["price_available"]
-    ]
-    recommendations["total_known_price"] = sum(known_prices)
-    total_candidates = recommendations["cpu_upgrades"] + recommendations["gpu_upgrades"]
-    recommendations["total_price_complete"] = bool(total_candidates) and all(
-        item["price_available"] for item in total_candidates
-    )
-
->>>>>>> c984055 (feat(frontend): complete UI for auth, results, index and history)
     return recommendations
