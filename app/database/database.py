@@ -27,6 +27,7 @@ def ensure_schema_columns() -> None:
 
     with sqlite3.connect(DB_PATH) as conn:
         migrations = {
+<<<<<<< HEAD
             "cpus": [
                 ("price", "FLOAT DEFAULT 0.0"),
                 ("price_source", "TEXT"),
@@ -37,6 +38,10 @@ def ensure_schema_columns() -> None:
                 ("price_source", "TEXT"),
                 ("price_updated_at", "DATETIME"),
             ],
+=======
+            "cpus": [("price", "FLOAT DEFAULT 0.0")],
+            "gpus": [("price", "FLOAT DEFAULT 0.0")],
+>>>>>>> c984055 (feat(frontend): complete UI for auth, results, index and history)
             "analyses": [("result_json", "TEXT")],
         }
 

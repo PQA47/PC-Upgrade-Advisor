@@ -8,5 +8,8 @@ python-multipart>=0.0.9
 pwdlib[argon2]
 itsdangerous
 python-dotenv>=1.0.1
+<<<<<<< HEAD
 
 beautifulsoup4>=4.12.3
+=======
+>>>>>>> c984055 (feat(frontend): complete UI for auth, results, index and history)
