@@ -19,7 +19,15 @@
   <nav class="mx-auto flex max-w-7xl items-center justify-between px-5 py-4" aria-label="Main navigation">
     <a href="/" class="font-bold tracking-tight"><span class="mr-2 rounded-lg bg-cyan-400/10 px-2 py-2 text-cyan-300">PC</span>PC Upgrade <span class="text-cyan-300">Advisor</span></a>
     <div class="hidden gap-7 text-sm text-slate-400 md:flex"><a href="#features" class="hover:text-white">Features</a><a href="#how-it-works" class="hover:text-white">How it works</a><a href="#technology" class="hover:text-white">Technology</a></div>
-    <div class="flex items-center gap-3"><a href="/login" class="hidden text-sm text-slate-300 hover:text-white sm:block">Log in</a><a href="/pc-upgrade" class="rounded-lg bg-cyan-400 px-4 py-2.5 text-sm font-bold text-slate-950 hover:bg-cyan-300">Get started →</a></div>
+    <div class="flex items-center gap-3">
+      {% if request.session.get("user_id") %}
+        <span class="text-sm text-slate-300 whitespace-nowrap"><span class="font-semibold text-cyan-400">{{ request.session.get("username") }}</span></span>
+        <a href="/logout" class="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2.5 text-sm font-semibold text-red-400 hover:bg-red-500/20">Logout</a>
+      {% else %}
+        <a href="/login" class="hidden text-sm text-slate-300 hover:text-white sm:block">Log in</a>
+        <a href="/register" class="rounded-lg bg-cyan-400 px-4 py-2.5 text-sm font-bold text-slate-950 hover:bg-cyan-300">Register</a>
+      {% endif %}
+    </div>
   </nav>
 </header>
 <main>
