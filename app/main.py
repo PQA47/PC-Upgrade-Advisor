@@ -79,11 +79,22 @@ app.include_router(history.router)
 
 
 @app.get("/")
-def index(request: Request):
-    """First page: let the user choose what they want to upgrade."""
+def landing(request: Request):
+    """Public landing page introducing PC Upgrade Advisor."""
     return templates.TemplateResponse(
         request=request,
-        name="device_selection.html"
+        name="landing.html",
+        context={"request": request}
+    )
+
+
+@app.get("/devices")
+def device_selection(request: Request):
+    """Device selection page for future advisor modules."""
+    return templates.TemplateResponse(
+        request=request,
+        name="device_selection.html",
+        context={"request": request}
     )
 
 @app.get("/pc-upgrade")

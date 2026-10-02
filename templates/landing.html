@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Analyze your PC, identify bottlenecks, check compatibility, and plan your next upgrade.">
+  <meta name="theme-color" content="#080d18">
+  <title>PC Upgrade Advisor — Make every upgrade count</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    html{scroll-behavior:smooth}body{background:#080d18}
+    .grid-bg{background-image:linear-gradient(rgba(148,163,184,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(148,163,184,.05) 1px,transparent 1px);background-size:40px 40px}
+    .gradient-text{background:linear-gradient(100deg,#67e8f9,#60a5fa);-webkit-background-clip:text;background-clip:text;color:transparent}
+    input[type=range]{width:100%;accent-color:#22d3ee}
+  </style>
+</head>
+<body class="min-h-screen text-slate-100 antialiased">
+<header class="sticky top-0 z-20 border-b border-white/10 bg-slate-950/90 backdrop-blur">
+  <nav class="mx-auto flex max-w-7xl items-center justify-between px-5 py-4" aria-label="Main navigation">
+    <a href="/" class="font-bold tracking-tight"><span class="mr-2 rounded-lg bg-cyan-400/10 px-2 py-2 text-cyan-300">PC</span>PC Upgrade <span class="text-cyan-300">Advisor</span></a>
+    <div class="hidden gap-7 text-sm text-slate-400 md:flex"><a href="#features" class="hover:text-white">Features</a><a href="#how-it-works" class="hover:text-white">How it works</a><a href="#technology" class="hover:text-white">Technology</a></div>
+    <div class="flex items-center gap-3"><a href="/login" class="hidden text-sm text-slate-300 hover:text-white sm:block">Log in</a><a href="/pc-upgrade" class="rounded-lg bg-cyan-400 px-4 py-2.5 text-sm font-bold text-slate-950 hover:bg-cyan-300">Get started →</a></div>
+  </nav>
+</header>
+<main>
+  <section class="grid-bg relative overflow-hidden">
+    <div class="mx-auto grid max-w-7xl items-center gap-12 px-5 py-20 lg:grid-cols-2 lg:py-28">
+      <div>
+        <p class="mb-6 inline-flex rounded-full border border-cyan-300/20 bg-cyan-300/5 px-3 py-1.5 text-xs font-bold tracking-widest text-cyan-200">HARDWARE ANALYSIS & UPGRADE PLANNING</p>
+        <h1 class="max-w-2xl text-5xl font-black leading-tight tracking-tight sm:text-6xl">Make every <span class="gradient-text">upgrade</span> count.</h1>
+        <p class="mt-7 max-w-xl text-lg leading-8 text-slate-400">Find out what is holding your PC back. Analyze your hardware, check component compatibility, and get upgrade recommendations tailored to your workload and budget.</p>
+        <div class="mt-9 flex flex-wrap gap-3"><a href="/pc-upgrade" class="rounded-xl bg-cyan-400 px-6 py-3.5 font-bold text-slate-950 hover:bg-cyan-300">Analyze my PC →</a><a href="#how-it-works" class="rounded-xl border border-slate-700 px-6 py-3.5 font-semibold hover:bg-white/5">See how it works</a></div>
+        <div class="mt-9 flex flex-wrap gap-5 text-sm text-slate-500"><span>✓ Bottleneck analysis</span><span>✓ Compatibility checks</span><span>✓ Budget-aware suggestions</span></div>
+      </div>
+      <div class="rounded-3xl border border-slate-700 bg-slate-900/90 p-6 shadow-2xl shadow-cyan-950/30 sm:p-8">
+        <p class="text-xs font-bold uppercase tracking-widest text-cyan-300">Interactive preview</p><h2 class="mt-2 text-xl font-bold">CPU / GPU balance</h2>
+        <div class="mt-7"><div class="mb-2 flex justify-between text-sm"><label for="cpu">CPU benchmark score</label><output id="cpuValue" class="font-mono text-cyan-300">20,000</output></div><input id="cpu" type="range" min="5000" max="60000" step="500" value="20000"></div>
+        <div class="mt-6"><div class="mb-2 flex justify-between text-sm"><label for="gpu">GPU benchmark score</label><output id="gpuValue" class="font-mono text-blue-300">30,000</output></div><input id="gpu" type="range" min="2000" max="45000" step="500" value="30000"></div>
+        <div class="mt-7 rounded-2xl border border-slate-700 bg-slate-950 p-5"><div class="flex justify-between text-xs text-slate-500"><span>CPU-limited</span><span>Balanced</span><span>GPU-limited</span></div><div class="mt-3 flex h-2 overflow-hidden rounded-full"><span class="w-1/3 bg-cyan-400"></span><span class="w-1/3 bg-emerald-400"></span><span class="w-1/3 bg-amber-400"></span></div><p id="result" aria-live="polite" class="mt-5 text-sm font-semibold leading-6">Your CPU and GPU are relatively balanced.</p><p class="mt-2 text-xs leading-5 text-slate-500">Illustrative ratio-based demo. Real performance also depends on applications, games, resolution, and system configuration.</p></div>
+      </div>
+    </div>
+  </section>
+  <section id="features" class="border-y border-white/10 bg-slate-900/40">
+    <div class="mx-auto max-w-7xl px-5 py-20"><p class="text-sm font-bold uppercase tracking-widest text-cyan-300">What you can do</p><h2 class="mt-3 max-w-2xl text-3xl font-extrabold sm:text-4xl">A clearer picture of your next PC upgrade.</h2><p class="mt-4 max-w-2xl leading-7 text-slate-400">Understand your current setup before spending money on new components.</p>
+      <div class="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <article class="rounded-2xl border border-slate-800 bg-slate-950/70 p-6"><div class="text-2xl text-cyan-300">⌁</div><h3 class="mt-4 text-lg font-bold">Bottleneck analysis</h3><p class="mt-2 text-sm leading-6 text-slate-400">Compare CPU and GPU benchmark scores to identify potential performance imbalances.</p></article>
+        <article class="rounded-2xl border border-slate-800 bg-slate-950/70 p-6"><div class="text-2xl text-blue-300">◇</div><h3 class="mt-4 text-lg font-bold">Component compatibility</h3><p class="mt-2 text-sm leading-6 text-slate-400">Check CPU and motherboard socket compatibility and review estimated power requirements.</p></article>
+        <article class="rounded-2xl border border-slate-800 bg-slate-950/70 p-6"><div class="text-2xl text-violet-300">◎</div><h3 class="mt-4 text-lg font-bold">Workload-based guidance</h3><p class="mt-2 text-sm leading-6 text-slate-400">Explore suggestions for gaming, content creation, programming, AI, and different resolutions.</p></article>
+        <article class="rounded-2xl border border-slate-800 bg-slate-950/70 p-6"><div class="text-2xl text-amber-300">₫</div><h3 class="mt-4 text-lg font-bold">Budget-aware recommendations</h3><p class="mt-2 text-sm leading-6 text-slate-400">Set an upgrade budget and review available retail price references in Vietnamese dong (VND).</p></article>
+        <article class="rounded-2xl border border-slate-800 bg-slate-950/70 p-6"><div class="text-2xl text-emerald-300">▤</div><h3 class="mt-4 text-lg font-bold">Accounts & analysis history</h3><p class="mt-2 text-sm leading-6 text-slate-400">Create an account and revisit or delete previously saved hardware analyses.</p></article>
+        <article class="rounded-2xl border border-slate-800 bg-slate-950/70 p-6"><div class="text-2xl text-rose-300">✉</div><h3 class="mt-4 text-lg font-bold">Password recovery</h3><p class="mt-2 text-sm leading-6 text-slate-400">Reset your password through a one-time email link that expires after 30 minutes.</p></article>
+      </div>
+    </div>
+  </section>
+  <section id="how-it-works" class="mx-auto max-w-7xl px-5 py-20"><div class="text-center"><p class="text-sm font-bold uppercase tracking-widest text-cyan-300">Simple workflow</p><h2 class="mt-3 text-3xl font-extrabold sm:text-4xl">From system details to an upgrade plan.</h2></div>
+    <div class="mt-12 grid gap-8 md:grid-cols-3"><article class="border-t-2 border-cyan-400 pt-5"><p class="font-mono text-sm text-cyan-300">01 / INPUT</p><h3 class="mt-3 text-xl font-bold">Describe your PC</h3><p class="mt-3 text-sm leading-7 text-slate-400">Choose your CPU, GPU, motherboard, RAM, storage, PSU, resolution, workload, and budget.</p></article><article class="border-t-2 border-blue-400 pt-5"><p class="font-mono text-sm text-blue-300">02 / ANALYZE</p><h3 class="mt-3 text-xl font-bold">Evaluate your configuration</h3><p class="mt-3 text-sm leading-7 text-slate-400">Review compatibility, estimated power needs, and hardware benchmark comparisons.</p></article><article class="border-t-2 border-emerald-400 pt-5"><p class="font-mono text-sm text-emerald-300">03 / PLAN</p><h3 class="mt-3 text-xl font-bold">Review recommendations</h3><p class="mt-3 text-sm leading-7 text-slate-400">Explore suggested components, estimated performance changes, and available price references.</p></article></div>
+  </section>
+  <section id="technology" class="border-y border-white/10 bg-slate-900/40"><div class="mx-auto grid max-w-7xl gap-10 px-5 py-16 lg:grid-cols-2 lg:items-center"><div><p class="text-sm font-bold uppercase tracking-widest text-cyan-300">Under the hood</p><h2 class="mt-3 text-3xl font-extrabold">Built with a practical Python stack.</h2><p class="mt-4 text-sm leading-7 text-slate-400">Hardware data is collected by a scraper and refreshed every seven days while the application scheduler is running. Benchmark coverage is still being expanded, so recommendations should be treated as guidance rather than a guarantee.</p></div><div class="flex flex-wrap gap-3">{% for item in ["Python 3.11", "FastAPI", "SQLAlchemy", "SQLite", "Jinja2", "Tailwind CSS", "APScheduler", "Argon2"] %}<span class="rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm font-semibold">{{ item }}</span>{% endfor %}</div></div></section>
+  <section class="mx-auto max-w-5xl px-5 py-20 text-center"><p class="text-sm font-bold uppercase tracking-widest text-cyan-300">Ready when you are</p><h2 class="mt-4 text-3xl font-extrabold sm:text-5xl">Know what to upgrade before you buy.</h2><p class="mx-auto mt-5 max-w-2xl leading-7 text-slate-400">Start with your current configuration and build an upgrade plan around your needs.</p><a href="/pc-upgrade" class="mt-8 inline-flex rounded-xl bg-cyan-400 px-7 py-4 font-bold text-slate-950 hover:bg-cyan-300">Start PC analysis →</a></section>
+</main>
+<footer class="border-t border-white/10"><div class="mx-auto flex max-w-7xl flex-col gap-3 px-5 py-8 text-sm text-slate-500 sm:flex-row sm:justify-between"><p>© 2026 PC Upgrade Advisor. Built to make hardware upgrades easier to understand.</p><a href="https://github.com/PQA47/PC-Upgrade-Advisor" target="_blank" rel="noopener noreferrer" class="hover:text-cyan-300">View source on GitHub ↗</a></div></footer>
+<script>
+(() => {
+ const cpu=document.getElementById('cpu'), gpu=document.getElementById('gpu');
+ const result=document.getElementById('result'), fmt=n=>Number(n).toLocaleString('en-US');
+ function update(){
+  const c=Number(cpu.value),g=Number(gpu.value),r=c/Math.max(g,1);
+  document.getElementById('cpuValue').textContent=fmt(c);
+  document.getElementById('gpuValue').textContent=fmt(g);
+  if(r<.75) result.textContent=`The CPU may be the limiting factor in this simplified comparison (about ${((1-r)*100).toFixed(1)}% below the GPU score).`;
+  else if(r>1.6) result.textContent=`The GPU may be the limiting factor in this simplified comparison (about ${((1-1/r)*100).toFixed(1)}% below the CPU score).`;
+  else result.textContent='Your CPU and GPU are relatively balanced in this simplified comparison.';
+ }
+ cpu.addEventListener('input',update);gpu.addEventListener('input',update);update();
+})();
+</script>
+</body>
+</html>

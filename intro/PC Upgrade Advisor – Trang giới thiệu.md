@@ -1,76 +1,27 @@
-**PC Upgrade Advisor**
+# PC Upgrade Advisor
 
-[Cách hoạt động](#cach-hoat-dong)[Tính năng](#tinh-nang)[Chạy thử](#chay-thu)
+## Overview
+PC Upgrade Advisor helps users understand their PC configuration, identify potential CPU/GPU bottlenecks, check component compatibility, and explore upgrade recommendations based on workload and budget.
 
-# Máy của bạn đang chậm ở đâu, nâng cấp gì trước?
+## Main features
+- CPU and GPU benchmark-based bottleneck analysis.
+- CPU–motherboard socket compatibility checks and estimated PSU requirements.
+- Recommendations for gaming, content creation, programming, and AI workloads.
+- Budget-aware component suggestions with available retail price references in VND.
+- User accounts, saved analysis history, and email-based password recovery.
 
-Nhập CPU, card đồ họa, mainboard và nhu cầu sử dụng. Ứng dụng kiểm tra tương thích, tìm điểm nghẽn và gợi ý linh kiện nâng cấp theo ngân sách bằng VND.
+## Workflow
+1. **Enter your configuration:** CPU, GPU, motherboard, RAM, storage, PSU wattage, resolution, workload, and budget.
+2. **Analyze:** review compatibility, estimated power needs, and benchmark comparisons.
+3. **Review recommendations:** explore suggested components, estimated performance changes, and available price references.
 
-[Chạy thử trên máy bạn](#chay-thu) [Xem mã nguồn](https://github.com/PQA47/PC-Upgrade-Advisor)
+## Technology
+Python 3.11, FastAPI, SQLAlchemy, SQLite, Jinja2, Tailwind CSS, APScheduler, and Argon2.
 
-## Thử nhanh: điểm nghẽn là CPU hay GPU?
+Hardware data is collected by a scraper and refreshed every seven days while the application scheduler is running. Benchmark coverage is still being expanded, so recommendations should be treated as guidance rather than a guarantee.
 
-Kéo hai thanh trượt. Công thức giống bước phân tích của ứng dụng: lấy điểm CPU chia điểm GPU.
-
-Điểm CPU
-
-Điểm GPU
-
-CPU yếu hơnCân bằngGPU yếu hơn
-
-## Từ cấu hình hiện tại đến danh sách nâng cấp
-
-1. ### Nhập cấu hình
-
-   Chọn CPU, GPU, mainboard, dung lượng RAM, loại ổ cứng, công suất nguồn, độ phân giải, mục đích sử dụng và ngân sách.
-2. ### Phân tích
-
-   Kiểm tra socket CPU với mainboard, ước tính công suất nguồn cần có, và so sánh điểm benchmark CPU với GPU.
-3. ### Nhận gợi ý
-
-   Xem kết luận có cần nâng cấp không, linh kiện đề xuất cùng socket, mức tăng hiệu năng và giá tham khảo.
-
-## Những gì ứng dụng làm được
-
-Phân tích điểm nghẽn
-
-Cho biết CPU hay GPU đang kéo hiệu năng xuống, kèm tỷ lệ phần trăm.
-
-Kiểm tra tương thích
-
-Báo lỗi khi CPU không khớp socket mainboard, cảnh báo khi nguồn không đủ công suất.
-
-Gợi ý theo nhu cầu
-
-Đánh giá theo game, dựng phim, lập trình hoặc AI, ở độ phân giải 1080p, 1440p hay 4K. Có cả gợi ý RAM và ổ SSD.
-
-Giá bán lẻ bằng VND
-
-Lấy giá từ cửa hàng VTCOM. Linh kiện chưa có giá sẽ ghi “Price unavailable” thay vì tính là 0 đồng.
-
-Tài khoản và lịch sử
-
-Đăng ký, đăng nhập, lưu mỗi lần phân tích để mở lại hoặc xoá sau này.
-
-Quên mật khẩu qua email
-
-Liên kết đặt lại có hiệu lực 30 phút và chỉ dùng được một lần.
-
-## Xây dựng bằng
-
-- Python 3.11
-- FastAPI
-- SQLAlchemy + SQLite
-- Jinja2
-- Tailwind CSS
-- APScheduler
-- Argon2
-
-Một script thu thập dữ liệu CPU, GPU, mainboard và giá bán lẻ, tự chạy lại mỗi 7 ngày. Dự án đang được phát triển và dữ liệu benchmark vẫn đang được bổ sung, nên kết quả hiện nên xem như tham khảo.
-
-## Chạy thử trên máy Windows
-
-```
+## Run locally on Windows
+```powershell
 git clone https://github.com/PQA47/PC-Upgrade-Advisor.git
 cd PC-Upgrade-Advisor
 py -m venv .venv
@@ -81,6 +32,6 @@ py scripts\scraper.py
 py -m uvicorn app.main:app --reload
 ```
 
-Sau đó mở **http://127.0.0.1:8000**. Cần điền SMTP trong `.env` nếu muốn thử chức năng quên mật khẩu.
+Then open http://127.0.0.1:8000. Configure SMTP settings in `.env` to test password recovery.
 
-PC Upgrade Advisor · Mã nguồn tại [GitHub](https://github.com/PQA47/PC-Upgrade-Advisor)
+Source code: https://github.com/PQA47/PC-Upgrade-Advisor
