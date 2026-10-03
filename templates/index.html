@@ -5,19 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Analyze - PC Upgrade Advisor</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    [data-bs-theme="light"] body { background: #F8FAFC !important; color: #1E293B !important; }
-    [data-bs-theme="light"] .bg-\[\#0F172A\] { background-color: #F8FAFC !important; }
-    [data-bs-theme="light"] .bg-\[\#1E293B\] { background-color: #FFFFFF !important; }
-    [data-bs-theme="light"] .border-\[\#334155\] { border-color: #CBD5E1 !important; }
-    [data-bs-theme="light"] .text-\[\#E2E8F0\], [data-bs-theme="light"] .text-\[\#F1F5F9\] { color: #0F172A !important; }
-    [data-bs-theme="light"] .text-\[\#94A3B8\] { color: #64748B !important; }
-  </style>
 </head>
 <body class="bg-[#0F172A] text-[#E2E8F0] min-h-screen py-10 px-4">
-  <button id="theme-toggle" type="button" aria-label="Switch to light mode" class="fixed bottom-4 right-4 z-50 rounded-xl border border-[#334155] bg-[#1E293B] px-4 py-2 text-sm font-medium text-[#E2E8F0] shadow-lg transition hover:border-[#06B6D4] focus:outline-none focus:ring-2 focus:ring-[#06B6D4]">
-    Switch to light mode
-  </button>
   <div class="max-w-4xl mx-auto">
 
     <!-- Header -->
@@ -53,10 +42,10 @@
           </a>
         {% endif %}
 
-        <a href="/api/sync-data" target="_blank"
-           class="text-xs bg-[#1E293B] hover:bg-[#334155] text-[#E2E8F0] border border-[#334155] px-3.5 py-2.5 rounded-xl transition flex items-center gap-2 whitespace-nowrap">
-          <span>🔄</span><span class="hidden sm:inline">Sync data</span>
-        </a>
+        <button id="syncDataBtn" type="button"
+                class="text-xs bg-[#1E293B] hover:bg-[#334155] text-[#E2E8F0] border border-[#334155] px-3.5 py-2.5 rounded-xl transition flex items-center gap-2 whitespace-nowrap disabled:opacity-60 disabled:cursor-wait">
+          <span id="syncDataIcon">🔄</span><span class="hidden sm:inline">Sync data</span>
+        </button>
       </div>
     </div>
     <a href="/"
@@ -226,6 +215,93 @@
 
   </div>
 
+
+  <!-- Sync notification -->
+  <div id="syncToast" role="status" aria-live="polite"
+       class="fixed top-5 right-5 z-50 w-[min(92vw,420px)] translate-x-[120%] opacity-0 pointer-events-none transition-all duration-300">
+    <div id="syncToastBox" class="rounded-2xl border border-[#334155] bg-[#1E293B] px-4 py-4 shadow-2xl shadow-black/30">
+      <div class="flex items-start gap-3">
+        <div id="syncToastIcon" class="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#06B6D4]/15 text-lg">🔄</div>
+        <div class="min-w-0 flex-1">
+          <p id="syncToastTitle" class="font-bold text-[#F1F5F9]">Sync started</p>
+          <p id="syncToastMessage" class="mt-1 text-sm leading-5 text-[#94A3B8]">Hardware data synchronization is running in the background.</p>
+        </div>
+        <button id="syncToastClose" type="button" aria-label="Close notification" class="text-[#64748B] hover:text-[#E2E8F0] text-lg leading-none">×</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+(function () {
+  const button = document.getElementById("syncDataBtn");
+  const icon = document.getElementById("syncDataIcon");
+  const toast = document.getElementById("syncToast");
+  const toastBox = document.getElementById("syncToastBox");
+  const toastIcon = document.getElementById("syncToastIcon");
+  const toastTitle = document.getElementById("syncToastTitle");
+  const toastMessage = document.getElementById("syncToastMessage");
+  const toastClose = document.getElementById("syncToastClose");
+  let toastTimer;
+
+  function hideToast() {
+    toast.classList.remove("translate-x-0", "opacity-100", "pointer-events-auto");
+    toast.classList.add("translate-x-[120%]", "opacity-0", "pointer-events-none");
+  }
+
+  function showToast(type, title, message, duration = 6000) {
+    clearTimeout(toastTimer);
+    const styles = {
+      success: { icon: "✓", iconClass: "bg-emerald-400/15 text-emerald-400", borderClass: "border-emerald-400/30" },
+      error: { icon: "!", iconClass: "bg-red-400/15 text-red-400", borderClass: "border-red-400/30" },
+      info: { icon: "🔄", iconClass: "bg-[#06B6D4]/15 text-[#06B6D4]", borderClass: "border-[#334155]" }
+    };
+    const style = styles[type] || styles.info;
+    toastIcon.textContent = style.icon;
+    toastIcon.className = `mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${style.iconClass}`;
+    toastBox.classList.remove("border-emerald-400/30", "border-red-400/30", "border-[#334155]");
+    toastBox.classList.add(style.borderClass);
+    toastTitle.textContent = title;
+    toastMessage.textContent = message;
+    toast.classList.remove("translate-x-[120%]", "opacity-0", "pointer-events-none");
+    toast.classList.add("translate-x-0", "opacity-100", "pointer-events-auto");
+    if (duration > 0) toastTimer = setTimeout(hideToast, duration);
+  }
+
+  toastClose.addEventListener("click", hideToast);
+
+  button.addEventListener("click", async () => {
+    if (button.disabled) return;
+    button.disabled = true;
+    icon.textContent = "⏳";
+    showToast("info", "Sync started", "Hardware data is being synchronized in the background. You can keep using this page.", 0);
+
+    try {
+      const response = await fetch("/api/sync-data", {
+        method: "GET",
+        headers: { "Accept": "application/json" },
+        credentials: "same-origin"
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.message || "The server could not start the synchronization.");
+
+      showToast(
+        "success",
+        "Sync queued successfully",
+        data.message || "Hardware data synchronization is running in the background. No new tab was opened.",
+        7000
+      );
+    } catch (error) {
+      showToast("error", "Sync failed", error.message || "Could not connect to the synchronization API.", 8000);
+    } finally {
+      setTimeout(() => {
+        button.disabled = false;
+        icon.textContent = "🔄";
+      }, 1200);
+    }
+  });
+})();
+</script>
+
 <script>
 (function () {
   const cpu = document.getElementById("cpuSelect");
@@ -279,19 +355,5 @@
 })();
 </script>
 
-<script>
-  const themeToggle = document.getElementById("theme-toggle");
-  function setTheme(theme) {
-    document.documentElement.setAttribute("data-bs-theme", theme);
-    const nextTheme = theme === "dark" ? "light" : "dark";
-    themeToggle.textContent = `Switch to ${nextTheme} mode`;
-    themeToggle.setAttribute("aria-label", `Switch to ${nextTheme} mode`);
-    localStorage.setItem("theme", theme);
-  }
-  setTheme(localStorage.getItem("theme") || "dark");
-  themeToggle.addEventListener("click", () => {
-    setTheme(document.documentElement.getAttribute("data-bs-theme") === "dark" ? "light" : "dark");
-  });
-</script>
 </body>
 </html>

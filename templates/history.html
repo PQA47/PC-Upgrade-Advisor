@@ -5,19 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Analysis History - PC Upgrade Advisor</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    [data-bs-theme="light"] body { background: #F8FAFC !important; color: #1E293B !important; }
-    [data-bs-theme="light"] .bg-\[\#0F172A\] { background-color: #F8FAFC !important; }
-    [data-bs-theme="light"] .bg-\[\#1E293B\] { background-color: #FFFFFF !important; }
-    [data-bs-theme="light"] .border-\[\#334155\] { border-color: #CBD5E1 !important; }
-    [data-bs-theme="light"] .text-\[\#E2E8F0\], [data-bs-theme="light"] .text-\[\#F1F5F9\] { color: #0F172A !important; }
-    [data-bs-theme="light"] .text-\[\#94A3B8\] { color: #64748B !important; }
-  </style>
 </head>
 <body class="min-h-screen bg-[#0F172A] text-[#E2E8F0] px-4 py-10">
-  <button id="theme-toggle" type="button" aria-label="Switch to light mode" class="fixed bottom-4 right-4 z-50 rounded-xl border border-[#334155] bg-[#1E293B] px-4 py-2 text-sm font-medium text-[#E2E8F0] shadow-lg transition hover:border-[#06B6D4] focus:outline-none focus:ring-2 focus:ring-[#06B6D4]">
-    Switch to light mode
-  </button>
   <div class="max-w-5xl mx-auto">
     <div class="flex items-center justify-between gap-4 mb-8">
       <div>
@@ -67,19 +56,5 @@
       </div>
     {% endif %}
   </div>
-  <script>
-    const themeToggle = document.getElementById("theme-toggle");
-    function setTheme(theme) {
-      document.documentElement.setAttribute("data-bs-theme", theme);
-      const nextTheme = theme === "dark" ? "light" : "dark";
-      themeToggle.textContent = `Switch to ${nextTheme} mode`;
-      themeToggle.setAttribute("aria-label", `Switch to ${nextTheme} mode`);
-      localStorage.setItem("theme", theme);
-    }
-    setTheme(localStorage.getItem("theme") || "dark");
-    themeToggle.addEventListener("click", () => {
-      setTheme(document.documentElement.getAttribute("data-bs-theme") === "dark" ? "light" : "dark");
-    });
-  </script>
 </body>
 </html>
