@@ -4,3 +4,6 @@
 .vscode/
 
 .env
+
+GEMINI.md
+.geminiignore
