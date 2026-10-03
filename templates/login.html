@@ -1,135 +1,472 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login - PC Upgrade Advisor</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <style id="theme-toggle-styles">
-    /* Light-mode overrides for the existing Tailwind color palette. */
-    html.light-mode body { background-color:#F8FAFC !important; color:#0F172A !important; }
-    html.light-mode [class*="bg-[#0F172A]"] { background-color:#F8FAFC !important; }
-    html.light-mode [class*="bg-[#1E293B]"] { background-color:#FFFFFF !important; }
-    html.light-mode [class*="bg-[#334155]"] { background-color:#E2E8F0 !important; }
-    html.light-mode [class*="bg-[#06B6D4]"] { background-color:#0891B2 !important; }
-    html.light-mode [class*="bg-[#3B82F6]"] { background-color:#2563EB !important; }
-    html.light-mode [class*="text-[#E2E8F0]"] { color:#0F172A !important; }
-    html.light-mode [class*="text-[#F1F5F9]"] { color:#0F172A !important; }
-    html.light-mode [class*="text-[#94A3B8]"] { color:#64748B !important; }
-    html.light-mode [class*="text-[#64748B]"] { color:#475569 !important; }
-    html.light-mode [class*="text-[#0F172A]"] { color:#F8FAFC !important; }
-    html.light-mode [class*="border-[#334155]"] { border-color:#CBD5E1 !important; }
-    html.light-mode [class*="border-[#06B6D4]"] { border-color:#0891B2 !important; }
-    html.light-mode [class*="border-[#3B82F6]"] { border-color:#2563EB !important; }
-    html.light-mode [class*="hover\\:bg-[#334155]"]:hover { background-color:#E2E8F0 !important; }
-    html.light-mode [class*="hover\\:text-[#06B6D4]"]:hover { color:#0891B2 !important; }
+    <title>Login | PC Upgrade Advisor</title>
 
-    #theme-toggle {
-      position:fixed;
-      top:1rem;
-      right:1rem;
-      z-index:9999;
-      display:inline-flex;
-      align-items:center;
-      gap:.5rem;
-      padding:.55rem .8rem;
-      border:1px solid #334155;
-      border-radius:.8rem;
-      background:#1E293B;
-      color:#E2E8F0;
-      font-size:.8rem;
-      font-weight:700;
-      line-height:1;
-      cursor:pointer;
-      box-shadow:0 8px 24px rgba(15,23,42,.18);
-      transition:background .2s ease,color .2s ease,border-color .2s ease,transform .15s ease;
-    }
-    #theme-toggle:hover { transform:translateY(-1px); }
-    html.light-mode #theme-toggle {
-      background:#FFFFFF;
-      color:#0F172A;
-      border-color:#CBD5E1;
-      box-shadow:0 8px 24px rgba(15,23,42,.10);
-    }
-    #theme-toggle .theme-icon { font-size:1rem; }
-    @media (max-width:640px) {
-      #theme-toggle { top:.75rem; right:.75rem; padding:.5rem .65rem; }
-      #theme-toggle .theme-label { display:none; }
-    }
-  </style>
-  <script>
-    // Apply the saved theme before the page renders to reduce light/dark flicker.
-    (() => {
-      try {
-        if (localStorage.getItem('pc-advisor-theme') === 'light') {
-          document.documentElement.classList.add('light-mode');
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        body {
+            background:
+                radial-gradient(circle at 15% 20%, rgba(34, 211, 238, .10), transparent 30%),
+                radial-gradient(circle at 85% 80%, rgba(168, 85, 247, .12), transparent 30%),
+                #05070a;
         }
-      } catch (_) {}
-    })();
-  </script>
+
+        .grid-bg {
+            background-image:
+                linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        .glass {
+            background: rgba(15, 23, 42, .72);
+            backdrop-filter: blur(18px);
+        }
+
+        .neon-text {
+            text-shadow:
+                0 0 10px rgba(34,211,238,.65),
+                0 0 30px rgba(34,211,238,.25);
+        }
+
+        .input-field {
+            transition:
+                border-color .2s ease,
+                box-shadow .2s ease;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: rgba(34,211,238,.6);
+            box-shadow:
+                0 0 0 3px rgba(34,211,238,.08),
+                0 0 20px rgba(34,211,238,.06);
+        }
+    </style>
+
+<style id="global-space-background">
+  html, body {
+    min-height: 100%;
+  }
+
+  body {
+    position: relative !important;
+    background-color: transparent !important;
+    background-image: none !important;
+  }
+
+  /* New space image */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    background: url("/static/images/web-background.webp") center center / cover no-repeat;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  /* Original dark/neon background kept as a translucent overlay */
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px),
+      radial-gradient(circle at 10% 10%, rgba(34,211,238,.10), transparent 28%),
+      radial-gradient(circle at 90% 80%, rgba(168,85,247,.12), transparent 30%),
+      linear-gradient(rgba(5,7,10,.42), rgba(5,7,10,.42));
+    background-size: 40px 40px, 40px 40px, auto, auto, auto;
+  }
+
+  body > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  .grid-bg {
+    display: none !important;
+  }
+</style>
 
 </head>
 
-  <button id="theme-toggle" type="button" aria-label="Switch to light mode" title="Switch theme">
-    <span class="theme-icon" aria-hidden="true">☀️</span>
-    <span class="theme-label">Light mode</span>
-  </button>
-  <script>
-    (() => {
-      const root = document.documentElement;
-      const button = document.getElementById('theme-toggle');
-      if (!button) return;
-      const icon = button.querySelector('.theme-icon');
-      const label = button.querySelector('.theme-label');
 
-      const updateThemeButton = () => {
-        const light = root.classList.contains('light-mode');
-        icon.textContent = light ? '🌙' : '☀️';
-        label.textContent = light ? 'Dark mode' : 'Light mode';
-        button.setAttribute('aria-label', light ? 'Switch to dark mode' : 'Switch to light mode');
-      };
+<body class="min-h-screen text-slate-100">
 
-      button.addEventListener('click', () => {
-        const light = root.classList.toggle('light-mode');
-        try { localStorage.setItem('pc-advisor-theme', light ? 'light' : 'dark'); } catch (_) {}
-        updateThemeButton();
-      });
+    <!-- Background -->
+    <div class="fixed inset-0 grid-bg pointer-events-none"></div>
 
-      updateThemeButton();
-    })();
-  </script>
+    <div class="fixed -top-40 -left-40
+                w-96 h-96 rounded-full
+                bg-cyan-500/10 blur-3xl
+                pointer-events-none"></div>
 
-  <body class="min-h-screen bg-[#0F172A] text-[#E2E8F0] flex items-center justify-center px-4">
-  <div class="w-full max-w-md bg-[#1E293B] border border-[#334155] rounded-2xl p-8 shadow-2xl">
-    <div class="mb-6">
-      <h1 class="text-3xl font-bold text-[#F1F5F9]">Welcome back</h1>
-      <p class="text-[#94A3B8] mt-1">Sign in to PC Upgrade Advisor</p>
-    </div>
-    {% if error %}
-    <div class="mb-5 rounded-xl border border-[#EF4444]/30 bg-[#EF4444]/10 px-4 py-3 text-sm text-[#EF4444]">{{ error }}</div>
-    {% endif %}
-    <form action="/login" method="POST" class="space-y-5">
-      <div>
-        <label class="block text-sm text-[#E2E8F0] mb-2">Username</label>
-        <input type="text" name="username" required autocomplete="username"
-               class="w-full rounded-xl border border-[#334155] bg-[#0F172A] px-4 py-3 text-[#E2E8F0] placeholder-[#94A3B8] outline-none focus:border-[#06B6D4] transition">
-      </div>
-      <div>
-        <label class="block text-sm text-[#E2E8F0] mb-2">Password</label>
-        <input type="password" name="password" required autocomplete="current-password"
-               class="w-full rounded-xl border border-[#334155] bg-[#0F172A] px-4 py-3 text-[#E2E8F0] placeholder-[#94A3B8] outline-none focus:border-[#06B6D4] transition">
-      </div>
-      <button type="submit" class="w-full rounded-xl bg-[#3B82F6] hover:bg-blue-600 py-3 font-semibold text-[#F1F5F9] transition">Login</button>
-    </form>
-    <p class="text-center text-sm text-[#94A3B8] mt-5">
-      <a href="/forgot-password" class="text-[#06B6D4] hover:underline">Forgot password?</a>
-    </p>
-    <p class="text-center text-sm text-[#94A3B8] mt-3">
-      Don't have an account?
-      <a href="/register" class="text-[#06B6D4] hover:underline">Register</a>
-    </p>
-    <p class="text-center mt-4"><a href="/" class="text-sm text-[#94A3B8] hover:text-[#E2E8F0]">← Back to home</a></p>
-  </div>
+    <div class="fixed -bottom-40 -right-40
+                w-96 h-96 rounded-full
+                bg-purple-600/10 blur-3xl
+                pointer-events-none"></div>
+
+
+    <!-- =====================================================
+         NAVBAR
+    ====================================================== -->
+
+    <nav class="relative z-10
+                border-b border-slate-900
+                bg-slate-950/70
+                backdrop-blur">
+
+        <div class="max-w-7xl mx-auto
+                    px-5 sm:px-8 py-5">
+
+            <div class="flex items-center
+                        justify-between">
+
+                <a href="/"
+                   class="flex items-center gap-3">
+
+                    <div class="w-10 h-10 rounded-xl
+                                border border-cyan-400/40
+                                bg-cyan-400/5
+                                flex items-center justify-center">
+
+                        <span class="text-xl">⚡</span>
+
+                    </div>
+
+                    <div>
+                        <div class="text-[20px]
+                                    text-slate-500
+                                    tracking-[0.25em]">
+
+                            PC UPGRADE ADVISOR
+
+                        </div>
+
+                    </div>
+
+                </a>
+
+
+                <a href="/"
+                   class="text-sm text-slate-400
+                          hover:text-cyan-300
+                          transition">
+
+                    ← Back to Home
+
+                </a>
+
+            </div>
+
+        </div>
+
+    </nav>
+
+
+    <!-- =====================================================
+         LOGIN
+    ====================================================== -->
+
+    <main class="relative z-10
+                 min-h-[calc(100vh-81px)]
+                 flex items-center
+                 justify-center
+                 px-5 py-12">
+
+
+        <div class="w-full max-w-md">
+
+
+            <!-- Heading -->
+
+            <div class="text-center mb-8">
+
+                <div class="inline-flex
+                            items-center
+                            gap-2
+                            text-xs
+                            text-cyan-400
+                            uppercase
+                            tracking-[0.3em]">
+
+                    <span class="w-2 h-2 rounded-full
+                                 bg-cyan-400
+                                 shadow-[0_0_10px_rgba(34,211,238,.9)]">
+                    </span>
+
+                    System Access
+
+                </div>
+
+
+                <h1 class="text-4xl sm:text-5xl
+                           font-black
+                           tracking-tight
+                           mt-4">
+
+                    WELCOME
+
+                    <span class="text-cyan-400 neon-text">
+                        BACK
+                    </span>
+
+                </h1>
+
+
+                <p class="text-slate-500 mt-3">
+
+                    Sign in to access your PC analysis history.
+
+                </p>
+
+            </div>
+
+
+            <!-- Login Card -->
+
+            <div class="glass
+                        border border-slate-800
+                        rounded-2xl
+                        p-6 sm:p-8
+                        shadow-2xl">
+
+
+                <!-- Error / Message -->
+
+                {% if error %}
+
+                <div class="mb-6 rounded-xl
+                            border border-red-400/30
+                            bg-red-400/5
+                            p-4">
+
+                    <div class="text-sm
+                                text-red-400">
+
+                        {{ error }}
+
+                    </div>
+
+                </div>
+
+                {% endif %}
+
+
+                {% if message %}
+
+                <div class="mb-6 rounded-xl
+                            border border-emerald-400/30
+                            bg-emerald-400/5
+                            p-4">
+
+                    <div class="text-sm
+                                text-emerald-400">
+
+                        {{ message }}
+
+                    </div>
+
+                </div>
+
+                {% endif %}
+
+
+                <!-- Form -->
+
+                <form action="/login"
+                      method="POST"
+                      class="space-y-5">
+
+
+                    <!-- Email -->
+
+                    <div>
+
+                        <label for="email"
+                               class="block
+                                      text-xs
+                                      font-bold
+                                      uppercase
+                                      tracking-wider
+                                      text-slate-400
+                                      mb-2">
+
+                            Email
+
+                        </label>
+
+                        <input
+                            id="email"
+                            name="email"
+                            type="email"
+                            autocomplete="email"
+                            required
+                            placeholder="you@example.com"
+                            class="input-field
+                                   w-full
+                                   rounded-xl
+                                   border border-slate-700
+                                   bg-slate-950/80
+                                   px-4 py-3.5
+                                   text-slate-100
+                                   placeholder:text-slate-600">
+
+                    </div>
+
+
+                    <!-- Password -->
+
+                    <div>
+
+                        <div class="flex items-center
+                                    justify-between mb-2">
+
+                            <label for="password"
+                                   class="block
+                                          text-xs
+                                          font-bold
+                                          uppercase
+                                          tracking-wider
+                                          text-slate-400">
+
+                                Password
+
+                            </label>
+
+
+                            <a href="/forgot-password"
+                               class="text-xs
+                                      text-cyan-400
+                                      hover:text-cyan-300
+                                      transition">
+
+                                Forgot password?
+
+                            </a>
+
+                        </div>
+
+
+                        <input
+                            id="password"
+                            name="password"
+                            type="password"
+                            autocomplete="current-password"
+                            required
+                            placeholder="••••••••"
+                            class="input-field
+                                   w-full
+                                   rounded-xl
+                                   border border-slate-700
+                                   bg-slate-950/80
+                                   px-4 py-3.5
+                                   text-slate-100
+                                   placeholder:text-slate-600">
+
+                    </div>
+
+
+                    <!-- Submit -->
+
+                    <button
+                        type="submit"
+                        class="w-full
+                               rounded-xl
+                               bg-cyan-500
+                               hover:bg-cyan-400
+                               text-slate-950
+                               font-black
+                               py-3.5
+                               transition
+                               shadow-[0_0_25px_rgba(34,211,238,.12)]">
+
+                        ⚡ LOGIN
+
+                    </button>
+
+                </form>
+
+
+                <!-- Register -->
+
+                <div class="relative my-7">
+
+                    <div class="absolute inset-0
+                                flex items-center">
+
+                        <div class="w-full
+                                    border-t
+                                    border-slate-800">
+                        </div>
+
+                    </div>
+
+                    <div class="relative
+                                flex justify-center">
+
+                        <span class="bg-slate-900/80
+                                     px-3
+                                     text-xs
+                                     text-slate-600">
+
+                            NEW TO GearUp?
+
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <a href="/register"
+                   class="block w-full
+                          text-center
+                          rounded-xl
+                          border border-slate-700
+                          bg-slate-950
+                          hover:border-cyan-400/40
+                          hover:text-cyan-300
+                          text-slate-300
+                          font-bold
+                          py-3.5
+                          transition">
+
+                    CREATE ACCOUNT
+
+                </a>
+
+            </div>
+
+
+            <!-- Footer -->
+
+            <div class="text-center
+                        text-xs
+                        text-slate-600
+                        mt-7">
+
+                PC Upgrade Advisor
+                · Secure account access
+
+            </div>
+
+        </div>
+
+    </main>
+
 </body>
 </html>

@@ -1,154 +1,624 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Analysis History - PC Upgrade Advisor</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <style id="theme-toggle-styles">
-    /* Light-mode overrides for the existing Tailwind color palette. */
-    html.light-mode body { background-color:#F8FAFC !important; color:#0F172A !important; }
-    html.light-mode [class*="bg-[#0F172A]"] { background-color:#F8FAFC !important; }
-    html.light-mode [class*="bg-[#1E293B]"] { background-color:#FFFFFF !important; }
-    html.light-mode [class*="bg-[#334155]"] { background-color:#E2E8F0 !important; }
-    html.light-mode [class*="bg-[#06B6D4]"] { background-color:#0891B2 !important; }
-    html.light-mode [class*="bg-[#3B82F6]"] { background-color:#2563EB !important; }
-    html.light-mode [class*="text-[#E2E8F0]"] { color:#0F172A !important; }
-    html.light-mode [class*="text-[#F1F5F9]"] { color:#0F172A !important; }
-    html.light-mode [class*="text-[#94A3B8]"] { color:#64748B !important; }
-    html.light-mode [class*="text-[#64748B]"] { color:#475569 !important; }
-    html.light-mode [class*="text-[#0F172A]"] { color:#F8FAFC !important; }
-    html.light-mode [class*="border-[#334155]"] { border-color:#CBD5E1 !important; }
-    html.light-mode [class*="border-[#06B6D4]"] { border-color:#0891B2 !important; }
-    html.light-mode [class*="border-[#3B82F6]"] { border-color:#2563EB !important; }
-    html.light-mode [class*="hover\\:bg-[#334155]"]:hover { background-color:#E2E8F0 !important; }
-    html.light-mode [class*="hover\\:text-[#06B6D4]"]:hover { color:#0891B2 !important; }
+    <title>Analysis History | PC Upgrade Advisor</title>
 
-    #theme-toggle {
-      position:fixed;
-      top:1rem;
-      right:1rem;
-      z-index:9999;
-      display:inline-flex;
-      align-items:center;
-      gap:.5rem;
-      padding:.55rem .8rem;
-      border:1px solid #334155;
-      border-radius:.8rem;
-      background:#1E293B;
-      color:#E2E8F0;
-      font-size:.8rem;
-      font-weight:700;
-      line-height:1;
-      cursor:pointer;
-      box-shadow:0 8px 24px rgba(15,23,42,.18);
-      transition:background .2s ease,color .2s ease,border-color .2s ease,transform .15s ease;
-    }
-    #theme-toggle:hover { transform:translateY(-1px); }
-    html.light-mode #theme-toggle {
-      background:#FFFFFF;
-      color:#0F172A;
-      border-color:#CBD5E1;
-      box-shadow:0 8px 24px rgba(15,23,42,.10);
-    }
-    #theme-toggle .theme-icon { font-size:1rem; }
-    @media (max-width:640px) {
-      #theme-toggle { top:.75rem; right:.75rem; padding:.5rem .65rem; }
-      #theme-toggle .theme-label { display:none; }
-    }
-  </style>
-  <script>
-    // Apply the saved theme before the page renders to reduce light/dark flicker.
-    (() => {
-      try {
-        if (localStorage.getItem('pc-advisor-theme') === 'light') {
-          document.documentElement.classList.add('light-mode');
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        html {
+            scroll-behavior: smooth;
         }
-      } catch (_) {}
-    })();
-  </script>
+
+        body {
+            background:
+                radial-gradient(circle at 10% 10%, rgba(34, 211, 238, 0.09), transparent 30%),
+                radial-gradient(circle at 90% 80%, rgba(168, 85, 247, 0.10), transparent 30%),
+                #05070a;
+        }
+
+        .grid-bg {
+            background-image:
+                linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        .glass {
+            background: rgba(15, 23, 42, 0.72);
+            backdrop-filter: blur(14px);
+        }
+
+        .history-card {
+            transition:
+                transform 180ms ease,
+                border-color 180ms ease,
+                box-shadow 180ms ease;
+        }
+
+        .history-card:hover {
+            transform: translateY(-3px);
+            border-color: rgba(34, 211, 238, 0.35);
+            box-shadow: 0 0 30px rgba(34, 211, 238, 0.06);
+        }
+
+        .neon-text {
+            text-shadow:
+                0 0 10px rgba(34, 211, 238, 0.65),
+                0 0 30px rgba(34, 211, 238, 0.25);
+        }
+    </style>
+
+<style id="global-space-background">
+  html, body {
+    min-height: 100%;
+  }
+
+  body {
+    position: relative !important;
+    background-color: transparent !important;
+    background-image: none !important;
+  }
+
+  /* New space image */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    background: url("/static/images/web-background.webp") center center / cover no-repeat;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  /* Original dark/neon background kept as a translucent overlay */
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px),
+      radial-gradient(circle at 10% 10%, rgba(34,211,238,.10), transparent 28%),
+      radial-gradient(circle at 90% 80%, rgba(168,85,247,.12), transparent 30%),
+      linear-gradient(rgba(5,7,10,.42), rgba(5,7,10,.42));
+    background-size: 40px 40px, 40px 40px, auto, auto, auto;
+  }
+
+  body > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  .grid-bg {
+    display: none !important;
+  }
+</style>
 
 </head>
 
-  <button id="theme-toggle" type="button" aria-label="Switch to light mode" title="Switch theme">
-    <span class="theme-icon" aria-hidden="true">☀️</span>
-    <span class="theme-label">Light mode</span>
-  </button>
-  <script>
-    (() => {
-      const root = document.documentElement;
-      const button = document.getElementById('theme-toggle');
-      if (!button) return;
-      const icon = button.querySelector('.theme-icon');
-      const label = button.querySelector('.theme-label');
 
-      const updateThemeButton = () => {
-        const light = root.classList.contains('light-mode');
-        icon.textContent = light ? '🌙' : '☀️';
-        label.textContent = light ? 'Dark mode' : 'Light mode';
-        button.setAttribute('aria-label', light ? 'Switch to dark mode' : 'Switch to light mode');
-      };
+<body class="min-h-screen text-slate-100">
 
-      button.addEventListener('click', () => {
-        const light = root.classList.toggle('light-mode');
-        try { localStorage.setItem('pc-advisor-theme', light ? 'light' : 'dark'); } catch (_) {}
-        updateThemeButton();
-      });
+    <!-- Background -->
+    <div class="fixed inset-0 grid-bg pointer-events-none"></div>
 
-      updateThemeButton();
-    })();
-  </script>
+    <div class="fixed -top-40 -left-40 w-96 h-96
+                rounded-full bg-cyan-500/10
+                blur-3xl pointer-events-none"></div>
 
-  <body class="min-h-screen bg-[#0F172A] text-[#E2E8F0] px-4 py-10">
-  <div class="max-w-5xl mx-auto">
-    <div class="flex items-center justify-between gap-4 mb-8">
-      <div>
-        <h1 class="text-3xl font-bold text-[#F1F5F9]">Analysis History</h1>
-        <p class="text-[#94A3B8] mt-1">Your saved PC analyses.</p>
-      </div>
-      <div class="flex gap-2">
-        <a href="/" class="rounded-xl bg-[#1E293B] border border-[#334155] px-4 py-2 text-sm text-[#E2E8F0] hover:bg-[#334155] transition">Home</a>
-        <a href="/logout" class="rounded-xl bg-[#EF4444]/10 border border-[#EF4444]/30 text-[#EF4444] px-4 py-2 text-sm hover:bg-[#EF4444]/20 transition">Logout</a>
-      </div>
-    </div>
+    <div class="fixed -bottom-40 -right-40 w-96 h-96
+                rounded-full bg-purple-600/10
+                blur-3xl pointer-events-none"></div>
 
-    {% if analyses %}
-      <div class="space-y-4">
-      {% for item in analyses %}
-        <div class="rounded-2xl border border-[#334155] bg-[#1E293B] p-6 shadow-xl">
-          <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-            <div>
-              <div class="text-sm text-[#94A3B8]">{{ item.created_at.strftime('%Y-%m-%d %H:%M') }}</div>
-              <h2 class="text-xl font-semibold text-[#F1F5F9] mt-1">{{ item.cpu_name }} + {{ item.gpu_name }}</h2>
-              <p class="text-[#94A3B8] mt-1">{{ item.motherboard_name }}</p>
+
+    <!-- =====================================================
+         NAVIGATION
+    ====================================================== -->
+
+    <nav class="relative z-10
+                border-b border-slate-900
+                bg-slate-950/70
+                backdrop-blur">
+
+        <div class="max-w-7xl mx-auto
+                    px-5 sm:px-8 py-5">
+
+            <div class="flex items-center
+                        justify-between">
+
+                <!-- Logo -->
+
+                <a href="/" class="flex items-center gap-3">
+
+                    <div class="w-10 h-10 rounded-xl
+                                border border-cyan-400/40
+                                bg-cyan-400/5
+                                flex items-center justify-center">
+
+                        <span class="text-xl">⚡</span>
+
+                    </div>
+
+                        </div>
+
+                        <div class="text-[20px]
+                                    text-slate-500
+                                    tracking-[0.25em]">
+
+                            PC UPGRADE ADVISOR
+
+                        </div>
+
+                    </div>
+
+                </a>
+
+
+                <!-- Navigation -->
+
+                <div class="flex items-center gap-5">
+
+                    <a href="/pc-upgrade"
+                       class="text-sm text-slate-400
+                              hover:text-cyan-300
+                              transition">
+
+                        Advisor
+
+                    </a>
+
+                    <a href="/"
+                       class="text-sm text-slate-400
+                              hover:text-cyan-300
+                              transition">
+
+                        Home
+
+                    </a>
+
+                </div>
+
             </div>
-            <div class="flex gap-2 flex-wrap">
-              <a href="/history/{{ item.id }}" class="rounded-xl bg-[#3B82F6] hover:bg-blue-600 text-[#F1F5F9] px-4 py-2 text-sm font-semibold transition">View result</a>
-              <form action="/history/delete/{{ item.id }}" method="POST">
-                <button type="submit" class="rounded-xl bg-[#EF4444]/10 border border-[#EF4444]/30 text-[#EF4444] px-4 py-2 text-sm hover:bg-[#EF4444]/20 transition">Delete</button>
-              </form>
-            </div>
-          </div>
 
-          <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mt-5 text-sm">
-            <div class="rounded-xl bg-[#0F172A] border border-[#334155] p-3"><div class="text-[#94A3B8]">RAM</div><div class="font-semibold text-[#E2E8F0] mt-1">{{ item.ram_gb }} GB</div></div>
-            <div class="rounded-xl bg-[#0F172A] border border-[#334155] p-3"><div class="text-[#94A3B8]">Resolution</div><div class="font-semibold text-[#E2E8F0] mt-1">{{ item.resolution }}</div></div>
-            <div class="rounded-xl bg-[#0F172A] border border-[#334155] p-3"><div class="text-[#94A3B8]">Usage</div><div class="font-semibold text-[#E2E8F0] mt-1 capitalize">{{ item.usage }}</div></div>
-            <div class="rounded-xl bg-[#0F172A] border border-[#334155] p-3"><div class="text-[#94A3B8]">PSU</div><div class="font-semibold text-[#E2E8F0] mt-1">{{ item.psu_watt }} W</div></div>
-            <div class="rounded-xl bg-[#0F172A] border border-[#334155] p-3"><div class="text-[#94A3B8]">Budget</div><div class="font-semibold text-[#E2E8F0] mt-1">{{ '{:,.0f}'.format(item.budget) }} VND</div></div>
-          </div>
         </div>
-      {% endfor %}
-      </div>
-    {% else %}
-      <div class="rounded-2xl border border-dashed border-[#334155] bg-[#1E293B]/60 p-12 text-center">
-        <div class="text-5xl mb-4">📋</div>
-        <h2 class="text-xl font-semibold text-[#F1F5F9]">No saved analyses yet</h2>
-        <p class="text-[#94A3B8] mt-2">Run an analysis while logged in and it will appear here.</p>
-        <a href="/pc-upgrade" class="inline-block mt-6 rounded-xl bg-[#3B82F6] hover:bg-blue-600 px-5 py-3 font-semibold text-[#F1F5F9] transition">Analyze a PC</a>
-      </div>
-    {% endif %}
-  </div>
+
+    </nav>
+
+
+    <!-- =====================================================
+         MAIN
+    ====================================================== -->
+
+    <main class="relative z-10
+                 max-w-7xl mx-auto
+                 px-5 sm:px-8
+                 py-10">
+
+
+        <!-- =================================================
+             HEADER
+        ================================================== -->
+
+        <section class="mb-10">
+
+            <div class="flex flex-col
+                        lg:flex-row
+                        lg:items-end
+                        lg:justify-between
+                        gap-6">
+
+                <div>
+
+                    <div class="flex items-center gap-2
+                                text-xs text-purple-400
+                                tracking-[0.3em]
+                                uppercase mb-4">
+
+                        <span class="w-2 h-2 rounded-full
+                                     bg-purple-400
+                                     shadow-[0_0_10px_rgba(168,85,247,.9)]">
+                        </span>
+
+                        Saved analyses
+
+                    </div>
+
+
+                    <h1 class="text-4xl sm:text-6xl
+                               font-black tracking-tight">
+
+                        ANALYSIS
+
+                        <span class="text-cyan-400 neon-text">
+                            HISTORY
+                        </span>
+
+                    </h1>
+
+
+                    <p class="text-slate-400
+                              mt-4 max-w-2xl
+                              leading-7">
+
+                        Review your previous PC analyses
+                        and open any recommendation report again.
+
+                    </p>
+
+                </div>
+
+
+                <!-- New analysis -->
+
+                <a href="/pc-upgrade"
+                   class="inline-flex items-center
+                          justify-center gap-2
+                          px-6 py-3.5
+                          rounded-xl
+                          bg-cyan-500
+                          hover:bg-cyan-400
+                          text-slate-950
+                          font-black
+                          transition
+                          shadow-[0_0_25px_rgba(34,211,238,.12)]">
+
+                    ⚡ New Analysis
+
+                </a>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             HISTORY LIST
+        ================================================== -->
+
+        {% if analyses %}
+
+        <section class="space-y-4">
+
+            {% for analysis in analyses %}
+
+            <div class="history-card
+                        glass
+                        border border-slate-800
+                        rounded-2xl
+                        p-5 sm:p-6">
+
+
+                <div class="flex flex-col
+                            lg:flex-row
+                            lg:items-center
+                            lg:justify-between
+                            gap-5">
+
+
+                    <!-- LEFT -->
+
+                    <div class="flex items-start
+                                gap-4 min-w-0">
+
+                        <div class="w-12 h-12
+                                    rounded-xl
+                                    bg-cyan-400/10
+                                    border border-cyan-400/20
+                                    flex items-center
+                                    justify-center
+                                    text-xl shrink-0">
+
+                            🖥️
+
+                        </div>
+
+
+                        <div class="min-w-0">
+
+                            <div class="flex flex-wrap
+                                        items-center gap-2">
+
+                                <h2 class="font-black
+                                           text-lg">
+
+                                    PC Analysis
+
+                                </h2>
+
+                                <span class="text-[10px]
+                                             uppercase
+                                             tracking-wider
+                                             px-2 py-1
+                                             rounded-md
+                                             bg-emerald-400/10
+                                             border
+                                             border-emerald-400/20
+                                             text-emerald-400">
+
+                                    Saved
+
+                                </span>
+
+                            </div>
+
+
+                            <p class="text-xs
+                                      text-slate-500
+                                      mt-1">
+
+                                {% if analysis.created_at %}
+
+                                    {{ analysis.created_at }}
+
+                                {% elif analysis.timestamp %}
+
+                                    {{ analysis.timestamp }}
+
+                                {% else %}
+
+                                    Analysis #{{ analysis.id }}
+
+                                {% endif %}
+
+                            </p>
+
+
+                            <!-- Hardware summary -->
+
+                            <div class="flex flex-wrap
+                                        gap-2 mt-4">
+
+
+                                {% if analysis.cpu_name %}
+
+                                <span class="px-3 py-1.5
+                                             rounded-lg
+                                             bg-slate-950
+                                             border border-slate-800
+                                             text-xs text-slate-300">
+
+                                    🧠 {{ analysis.cpu_name }}
+
+                                </span>
+
+                                {% endif %}
+
+
+                                {% if analysis.gpu_name %}
+
+                                <span class="px-3 py-1.5
+                                             rounded-lg
+                                             bg-slate-950
+                                             border border-slate-800
+                                             text-xs text-slate-300">
+
+                                    🎮 {{ analysis.gpu_name }}
+
+                                </span>
+
+                                {% endif %}
+
+
+                                {% if analysis.mb_name %}
+
+                                <span class="px-3 py-1.5
+                                             rounded-lg
+                                             bg-slate-950
+                                             border border-slate-800
+                                             text-xs text-slate-300">
+
+                                    🔧 {{ analysis.mb_name }}
+
+                                </span>
+
+                                {% endif %}
+
+
+                                {% if analysis.ram_gb %}
+
+                                <span class="px-3 py-1.5
+                                             rounded-lg
+                                             bg-slate-950
+                                             border border-slate-800
+                                             text-xs text-slate-300">
+
+                                    💾 {{ analysis.ram_gb }} GB RAM
+
+                                </span>
+
+                                {% endif %}
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- RIGHT -->
+
+                    <div class="flex items-center
+                                gap-3 lg:shrink-0">
+
+
+                        <a href="/history/{{ analysis.id }}"
+                           class="flex-1 lg:flex-none
+                                  inline-flex
+                                  items-center
+                                  justify-center
+                                  gap-2
+                                  px-5 py-3
+                                  rounded-xl
+                                  border
+                                  border-cyan-400/30
+                                  bg-cyan-400/5
+                                  text-cyan-300
+                                  font-bold
+                                  hover:bg-cyan-400/10
+                                  hover:border-cyan-400/50
+                                  transition">
+
+                            View Report →
+
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            {% endfor %}
+
+        </section>
+
+
+        <!-- Bottom action -->
+
+        <section class="mt-8">
+
+            <div class="rounded-2xl
+                        border border-slate-800
+                        bg-slate-900/60
+                        p-6 text-center">
+
+                <p class="text-sm text-slate-400">
+
+                    Ready to analyze another configuration?
+
+                </p>
+
+                <a href="/pc-upgrade"
+                   class="inline-flex
+                          items-center
+                          gap-2
+                          mt-4
+                          px-6 py-3
+                          rounded-xl
+                          bg-slate-950
+                          border border-slate-700
+                          text-slate-200
+                          font-bold
+                          hover:border-cyan-400/40
+                          hover:text-cyan-300
+                          transition">
+
+                    + Start New Analysis
+
+                </a>
+
+            </div>
+
+        </section>
+
+
+        {% else %}
+
+
+        <!-- =================================================
+             EMPTY STATE
+        ================================================== -->
+
+        <section class="glass
+                        border border-slate-800
+                        rounded-2xl
+                        p-10 sm:p-16
+                        text-center">
+
+            <div class="mx-auto w-20 h-20
+                        rounded-2xl
+                        border border-cyan-400/20
+                        bg-cyan-400/5
+                        flex items-center
+                        justify-center
+                        text-3xl">
+
+                🗂️
+
+            </div>
+
+
+            <div class="text-xs uppercase
+                        tracking-[0.3em]
+                        text-slate-600
+                        mt-7">
+
+                No saved analyses
+
+            </div>
+
+
+            <h2 class="text-3xl
+                       font-black
+                       mt-3">
+
+                YOUR HISTORY IS EMPTY
+
+            </h2>
+
+
+            <p class="text-slate-400
+                      max-w-lg
+                      mx-auto
+                      mt-4
+                      leading-7">
+
+                Run your first PC analysis and your
+                recommendation report will appear here.
+
+            </p>
+
+
+            <a href="/pc-upgrade"
+               class="inline-flex
+                      items-center
+                      justify-center
+                      gap-2
+                      mt-8
+                      px-7 py-3.5
+                      rounded-xl
+                      bg-cyan-500
+                      hover:bg-cyan-400
+                      text-slate-950
+                      font-black
+                      transition
+                      shadow-[0_0_25px_rgba(34,211,238,.12)]">
+
+                ⚡ Analyze My PC
+
+            </a>
+
+        </section>
+
+        {% endif %}
+
+
+        <!-- =================================================
+             FOOTER
+        ================================================== -->
+
+        <footer class="text-center
+                       text-xs
+                       text-slate-600
+                       py-8">
+
+            PC Upgrade Advisor
+            · Analysis History
+            · Upgrade Guidance
+
+        </footer>
+
+    </main>
+
 </body>
 </html>

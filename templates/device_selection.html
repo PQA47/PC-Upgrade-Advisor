@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Choose Device | PC Upgrade Advisor</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background:
+        radial-gradient(circle at 10% 10%, rgba(0, 255, 255, 0.08), transparent 30%),
+        radial-gradient(circle at 90% 80%, rgba(168, 85, 247, 0.10), transparent 30%),
+        #05070a;
+    }
+
+    .grid-bg {
+      background-image:
+        linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+      background-size: 40px 40px;
+    }
+
+    .device-card {
+      transition:
+        transform 180ms ease,
+        border-color 180ms ease,
+        box-shadow 180ms ease,
+        background 180ms ease;
+    }
+
+    .device-card:hover {
+      transform: translateY(-8px);
+    }
+
+    .pc-card:hover {
+      border-color: rgba(34, 211, 238, 0.7);
+      box-shadow:
+        0 0 30px rgba(34, 211, 238, 0.12),
+        inset 0 0 30px rgba(34, 211, 238, 0.03);
+    }
+
+    .mobile-card:hover {
+      border-color: rgba(168, 85, 247, 0.6);
+      box-shadow:
+        0 0 30px rgba(168, 85, 247, 0.12),
+        inset 0 0 30px rgba(168, 85, 247, 0.03);
+    }
+
+    .other-card:hover {
+      border-color: rgba(52, 211, 153, 0.5);
+      box-shadow:
+        0 0 30px rgba(52, 211, 153, 0.10),
+        inset 0 0 30px rgba(52, 211, 153, 0.03);
+    }
+
+    .icon-box {
+      transition: transform 180ms ease;
+    }
+
+    .device-card:hover .icon-box {
+      transform: scale(1.08);
+    }
+
+    .pulse-dot {
+      animation: pulseDot 2s ease-in-out infinite;
+    }
+
+    @keyframes pulseDot {
+      0%, 100% {
+        opacity: 0.45;
+      }
+
+      50% {
+        opacity: 1;
+      }
+    }
+  </style>
+
+<style id="global-space-background">
+  html, body {
+    min-height: 100%;
+  }
+
+  body {
+    position: relative !important;
+    background-color: transparent !important;
+    background-image: none !important;
+  }
+
+  /* New space image */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    background: url("/static/images/web-background.webp") center center / cover no-repeat;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  /* Original dark/neon background kept as a translucent overlay */
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px),
+      radial-gradient(circle at 10% 10%, rgba(34,211,238,.10), transparent 28%),
+      radial-gradient(circle at 90% 80%, rgba(168,85,247,.12), transparent 30%),
+      linear-gradient(rgba(5,7,10,.42), rgba(5,7,10,.42));
+    background-size: 40px 40px, 40px 40px, auto, auto, auto;
+  }
+
+  body > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  .grid-bg {
+    display: none !important;
+  }
+</style>
+
+</head>
+
+
+<body class="min-h-screen text-slate-100">
+
+  <!-- Background -->
+  <div class="fixed inset-0 grid-bg pointer-events-none"></div>
+
+  <div class="fixed top-20 left-10 w-72 h-72
+              bg-cyan-500/10 rounded-full blur-3xl
+              pointer-events-none"></div>
+
+  <div class="fixed bottom-10 right-10 w-72 h-72
+              bg-purple-600/10 rounded-full blur-3xl
+              pointer-events-none"></div>
+
+
+  <!-- NAV -->
+  <nav class="relative z-10 max-w-7xl mx-auto px-5 sm:px-8 py-6">
+
+    <div class="flex items-center justify-between">
+
+      <a href="/" class="flex items-center gap-3">
+
+        <div class="w-10 h-10 rounded-xl
+                    border border-cyan-400/40
+                    bg-cyan-400/5
+                    flex items-center justify-center">
+
+          <span class="text-xl">⚡</span>
+
+        </div>
+
+        <div>
+          <div class="text-[20px] text-slate-500 tracking-[0.25em]">
+            PC UPGRADE ADVISOR
+          </div>
+
+        </div>
+
+      </a>
+
+
+      <a href="/"
+         class="text-sm text-slate-400 hover:text-cyan-300 transition">
+
+        ← Home
+
+      </a>
+
+    </div>
+
+  </nav>
+
+
+  <!-- MAIN -->
+  <main class="relative z-10 max-w-6xl mx-auto px-5 sm:px-8 py-12 sm:py-20">
+
+    <!-- Heading -->
+    <div class="text-center max-w-3xl mx-auto">
+
+      <div class="inline-flex items-center gap-2
+                  px-3 py-1.5 rounded-full
+                  border border-cyan-400/20
+                  bg-cyan-400/5
+                  text-[10px] text-cyan-300
+                  tracking-[0.25em] uppercase">
+
+        <span class="w-1.5 h-1.5 rounded-full
+                     bg-cyan-400 pulse-dot"></span>
+
+        Select your device
+
+      </div>
+
+
+      <h1 class="mt-7 text-4xl sm:text-6xl
+                 font-black tracking-tight">
+
+        WHAT DO YOU WANT
+        <span class="text-cyan-400">TO UPGRADE?</span>
+
+      </h1>
+
+
+      <p class="mt-5 text-slate-400 leading-7">
+
+        Select a device category to begin your upgrade analysis.
+
+      </p>
+
+    </div>
+
+
+    <!-- Device Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mt-14">
+
+
+      <!-- PC -->
+      <a href="/pc-upgrade"
+         class="device-card pc-card group
+                rounded-2xl border border-cyan-400/20
+                bg-slate-900/70 backdrop-blur
+                p-7 sm:p-8">
+
+        <div class="flex items-start justify-between">
+
+          <div class="icon-box w-16 h-16
+                      rounded-2xl
+                      border border-cyan-400/30
+                      bg-cyan-400/5
+                      flex items-center justify-center">
+
+            <span class="text-4xl">💻</span>
+
+          </div>
+
+          <span class="text-xs font-bold
+                       text-cyan-400
+                       border border-cyan-400/20
+                       px-2.5 py-1 rounded-full">
+
+            AVAILABLE
+
+          </span>
+
+        </div>
+
+
+        <div class="mt-8">
+
+          <div class="text-xs text-cyan-400
+                      tracking-[0.25em] uppercase">
+
+            DEVICE 01
+
+          </div>
+
+          <h2 class="text-3xl font-black mt-2
+                     group-hover:text-cyan-300 transition">
+
+            PC
+
+          </h2>
+
+          <p class="text-sm text-slate-400
+                    leading-6 mt-4">
+
+            Analyze your computer configuration and
+            find compatible CPU, GPU, motherboard,
+            and other upgrade options.
+
+          </p>
+
+        </div>
+
+
+        <div class="mt-8 flex items-center justify-between">
+
+          <span class="text-sm font-bold text-slate-200">
+            Start PC analysis
+          </span>
+
+          <span class="w-10 h-10 rounded-xl
+                       bg-cyan-500/10
+                       border border-cyan-400/20
+                       flex items-center justify-center
+                       text-cyan-400
+                       group-hover:bg-cyan-400
+                       group-hover:text-slate-950
+                       transition">
+
+            →
+
+          </span>
+
+        </div>
+
+      </a>
+
+
+      <!-- MOBILE -->
+      <div class="device-card mobile-card
+                  rounded-2xl border border-purple-400/15
+                  bg-slate-900/50 backdrop-blur
+                  p-7 sm:p-8">
+
+        <div class="flex items-start justify-between">
+
+          <div class="icon-box w-16 h-16
+                      rounded-2xl
+                      border border-purple-400/25
+                      bg-purple-400/5
+                      flex items-center justify-center">
+
+            <span class="text-4xl">📱</span>
+
+          </div>
+
+          <span class="text-xs font-bold
+                       text-purple-300
+                       border border-purple-400/20
+                       px-2.5 py-1 rounded-full">
+
+            SOON
+
+          </span>
+
+        </div>
+
+
+        <div class="mt-8">
+
+          <div class="text-xs text-purple-400
+                      tracking-[0.25em] uppercase">
+
+            DEVICE 02
+
+          </div>
+
+          <h2 class="text-3xl font-black mt-2">
+            MOBILE
+          </h2>
+
+          <p class="text-sm text-slate-400
+                    leading-6 mt-4">
+
+            Phone and tablet upgrade analysis
+            will be available in a future version.
+
+          </p>
+
+        </div>
+
+
+        <div class="mt-8">
+
+          <div class="w-full text-center
+                      rounded-xl
+                      border border-slate-700
+                      bg-slate-800/60
+                      text-slate-500
+                      font-bold
+                      py-3">
+
+            COMING SOON
+
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <!-- OTHER -->
+      <div class="device-card other-card
+                  rounded-2xl border border-emerald-400/15
+                  bg-slate-900/50 backdrop-blur
+                  p-7 sm:p-8">
+
+        <div class="flex items-start justify-between">
+
+          <div class="icon-box w-16 h-16
+                      rounded-2xl
+                      border border-emerald-400/25
+                      bg-emerald-400/5
+                      flex items-center justify-center">
+
+            <span class="text-4xl">⚙️</span>
+
+          </div>
+
+          <span class="text-xs font-bold
+                       text-emerald-300
+                       border border-emerald-400/20
+                       px-2.5 py-1 rounded-full">
+
+            SOON
+
+          </span>
+
+        </div>
+
+
+        <div class="mt-8">
+
+          <div class="text-xs text-emerald-400
+                      tracking-[0.25em] uppercase">
+
+            DEVICE 03
+
+          </div>
+
+          <h2 class="text-3xl font-black mt-2">
+            OTHER
+          </h2>
+
+          <p class="text-sm text-slate-400
+                    leading-6 mt-4">
+
+            Upgrade guidance for other electronic
+            devices will be added later.
+
+          </p>
+
+        </div>
+
+
+        <div class="mt-8">
+
+          <div class="w-full text-center
+                      rounded-xl
+                      border border-slate-700
+                      bg-slate-800/60
+                      text-slate-500
+                      font-bold
+                      py-3">
+
+            COMING SOON
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+
+    <!-- Bottom navigation -->
+    <div class="mt-12 text-center">
+
+      <a href="/"
+         class="text-sm text-slate-500
+                hover:text-cyan-400 transition">
+
+        ← Return to homepage
+
+      </a>
+
+    </div>
+
+  </main>
+
+
+  <!-- FOOTER -->
+  <footer class="relative z-10 border-t border-slate-900 mt-10">
+
+    <div class="max-w-6xl mx-auto px-5 sm:px-8 py-8
+                text-center text-xs text-slate-600">
+
+      PC Upgrade Advisor · Upgrade smarter. Build better.
+
+    </div>
+
+  </footer>
+
+</body>
+</html>

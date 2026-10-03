@@ -2,183 +2,345 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Analyze your PC, identify bottlenecks, check compatibility, and plan your next upgrade.">
-  <meta name="theme-color" content="#0F172A">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <title>PC Upgrade Advisor</title>
+
   <script src="https://cdn.tailwindcss.com"></script>
+
   <style>
-    html{scroll-behavior:smooth}body{background:#0F172A;color:#E2E8F0}
-    .grid-bg{background-image:linear-gradient(rgba(148,163,184,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(148,163,184,.05) 1px,transparent 1px);background-size:40px 40px}
-    .gradient-text{background:linear-gradient(100deg,#06B6D4,#3B82F6);-webkit-background-clip:text;background-clip:text;color:transparent}
-    input[type=range]{width:100%;accent-color:#06B6D4}
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background:
+        radial-gradient(circle at 15% 20%, rgba(0, 255, 255, 0.10), transparent 30%),
+        radial-gradient(circle at 85% 70%, rgba(168, 85, 247, 0.10), transparent 30%),
+        #05070a;
+    }
+
+    .grid-bg {
+      background-image:
+        linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+      background-size: 40px 40px;
+    }
+
+    .neon-text {
+      text-shadow:
+        0 0 10px rgba(34, 211, 238, 0.7),
+        0 0 30px rgba(34, 211, 238, 0.35);
+    }
+
+    .neon-button {
+      box-shadow:
+        0 0 15px rgba(6, 182, 212, 0.25),
+        inset 0 0 15px rgba(6, 182, 212, 0.08);
+    }
+
+    .neon-button:hover {
+      box-shadow:
+        0 0 25px rgba(6, 182, 212, 0.45),
+        0 0 50px rgba(6, 182, 212, 0.15),
+        inset 0 0 20px rgba(6, 182, 212, 0.12);
+    }
+
+    .orb {
+      animation: float 6s ease-in-out infinite;
+    }
+
+    .orb-delay {
+      animation-delay: -3s;
+    }
+
+    @keyframes float {
+      0%, 100% {
+        transform: translateY(0);
+      }
+
+      50% {
+        transform: translateY(-18px);
+      }
+    }
+
+    .scan-line {
+      animation: scan 4s linear infinite;
+    }
+
+    @keyframes scan {
+      0% {
+        transform: translateY(-100%);
+      }
+
+      100% {
+        transform: translateY(100vh);
+      }
+    }
   </style>
 
-  <style id="theme-toggle-styles">
-    /* Light-mode overrides for the existing Tailwind color palette. */
-    html.light-mode body { background-color:#F8FAFC !important; color:#0F172A !important; }
-    html.light-mode [class*="bg-[#0F172A]"] { background-color:#F8FAFC !important; }
-    html.light-mode [class*="bg-[#1E293B]"] { background-color:#FFFFFF !important; }
-    html.light-mode [class*="bg-[#334155]"] { background-color:#E2E8F0 !important; }
-    html.light-mode [class*="bg-[#06B6D4]"] { background-color:#0891B2 !important; }
-    html.light-mode [class*="bg-[#3B82F6]"] { background-color:#2563EB !important; }
-    html.light-mode [class*="text-[#E2E8F0]"] { color:#0F172A !important; }
-    html.light-mode [class*="text-[#F1F5F9]"] { color:#0F172A !important; }
-    html.light-mode [class*="text-[#94A3B8]"] { color:#64748B !important; }
-    html.light-mode [class*="text-[#64748B]"] { color:#475569 !important; }
-    html.light-mode [class*="text-[#0F172A]"] { color:#F8FAFC !important; }
-    html.light-mode [class*="border-[#334155]"] { border-color:#CBD5E1 !important; }
-    html.light-mode [class*="border-[#06B6D4]"] { border-color:#0891B2 !important; }
-    html.light-mode [class*="border-[#3B82F6]"] { border-color:#2563EB !important; }
-    html.light-mode [class*="hover\\:bg-[#334155]"]:hover { background-color:#E2E8F0 !important; }
-    html.light-mode [class*="hover\\:text-[#06B6D4]"]:hover { color:#0891B2 !important; }
+<style id="global-space-background">
+  html, body {
+    min-height: 100%;
+  }
 
-    #theme-toggle {
-      position:fixed;
-      top:1rem;
-      right:1rem;
-      z-index:9999;
-      display:inline-flex;
-      align-items:center;
-      gap:.5rem;
-      padding:.55rem .8rem;
-      border:1px solid #334155;
-      border-radius:.8rem;
-      background:#1E293B;
-      color:#E2E8F0;
-      font-size:.8rem;
-      font-weight:700;
-      line-height:1;
-      cursor:pointer;
-      box-shadow:0 8px 24px rgba(15,23,42,.18);
-      transition:background .2s ease,color .2s ease,border-color .2s ease,transform .15s ease;
-    }
-    #theme-toggle:hover { transform:translateY(-1px); }
-    html.light-mode #theme-toggle {
-      background:#FFFFFF;
-      color:#0F172A;
-      border-color:#CBD5E1;
-      box-shadow:0 8px 24px rgba(15,23,42,.10);
-    }
-    #theme-toggle .theme-icon { font-size:1rem; }
-    @media (max-width:640px) {
-      #theme-toggle { top:.75rem; right:.75rem; padding:.5rem .65rem; }
-      #theme-toggle .theme-label { display:none; }
-    }
-  </style>
-  <script>
-    // Apply the saved theme before the page renders to reduce light/dark flicker.
-    (() => {
-      try {
-        if (localStorage.getItem('pc-advisor-theme') === 'light') {
-          document.documentElement.classList.add('light-mode');
-        }
-      } catch (_) {}
-    })();
-  </script>
+  body {
+    position: relative !important;
+    background-color: transparent !important;
+    background-image: none !important;
+  }
+
+  /* New space image */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    background: url("/static/images/web-background.webp") center center / cover no-repeat;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  /* Original dark/neon background kept as a translucent overlay */
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px),
+      radial-gradient(circle at 10% 10%, rgba(34,211,238,.10), transparent 28%),
+      radial-gradient(circle at 90% 80%, rgba(168,85,247,.12), transparent 30%),
+      linear-gradient(rgba(5,7,10,.42), rgba(5,7,10,.42));
+    background-size: 40px 40px, 40px 40px, auto, auto, auto;
+  }
+
+  body > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  .grid-bg {
+    display: none !important;
+  }
+</style>
 
 </head>
 
-  <button id="theme-toggle" type="button" aria-label="Switch to light mode" title="Switch theme">
-    <span class="theme-icon" aria-hidden="true">☀️</span>
-    <span class="theme-label">Light mode</span>
-  </button>
-  <script>
-    (() => {
-      const root = document.documentElement;
-      const button = document.getElementById('theme-toggle');
-      if (!button) return;
-      const icon = button.querySelector('.theme-icon');
-      const label = button.querySelector('.theme-label');
+<body class="min-h-screen text-slate-100 overflow-x-hidden">
 
-      const updateThemeButton = () => {
-        const light = root.classList.contains('light-mode');
-        icon.textContent = light ? '🌙' : '☀️';
-        label.textContent = light ? 'Dark mode' : 'Light mode';
-        button.setAttribute('aria-label', light ? 'Switch to dark mode' : 'Switch to light mode');
-      };
+  <!-- Background -->
+  <div class="fixed inset-0 grid-bg pointer-events-none"></div>
 
-      button.addEventListener('click', () => {
-        const light = root.classList.toggle('light-mode');
-        try { localStorage.setItem('pc-advisor-theme', light ? 'light' : 'dark'); } catch (_) {}
-        updateThemeButton();
-      });
+  <div class="fixed -top-32 -left-32 w-96 h-96 rounded-full bg-cyan-500/10 blur-3xl orb pointer-events-none"></div>
+  <div class="fixed -bottom-32 -right-32 w-96 h-96 rounded-full bg-purple-600/10 blur-3xl orb orb-delay pointer-events-none"></div>
 
-      updateThemeButton();
-    })();
-  </script>
+  <!-- Scan line -->
+  <div class="fixed left-0 right-0 h-px bg-cyan-400/10 scan-line pointer-events-none"></div>
 
-  <body class="min-h-screen text-[#E2E8F0] antialiased">
-<header class="sticky top-0 z-20 border-b border-[#334155] bg-[#0F172A]/90 backdrop-blur">
-  <nav class="mx-auto flex max-w-7xl items-center justify-between px-5 py-4" aria-label="Main navigation">
-    <a href="/" class="font-bold tracking-tight"><span class="mr-2 rounded-lg bg-[#06B6D4]/10 px-2 py-2 text-[#06B6D4]">PC Upgrade Advisor</span></a>
-    <div class="hidden gap-7 text-sm text-[#94A3B8] md:flex"><a href="#features" class="hover:text-[#F1F5F9]">Features</a><a href="#how-it-works" class="hover:text-[#F1F5F9]">How it works</a><a href="#technology" class="hover:text-[#F1F5F9]">Technology</a></div>
-    <div class="flex items-center gap-3">
-      {% if request.session.get("user_id") %}
-        <span class="text-sm text-[#E2E8F0] whitespace-nowrap"><span class="font-semibold text-[#06B6D4]">{{ request.session.get("username") }}</span></span>
-        <a href="/logout" class="rounded-lg border border-[#EF4444]/30 bg-[#EF4444]/10 px-4 py-2.5 text-sm font-semibold text-[#EF4444] hover:bg-[#EF4444]/20">Logout</a>
-      {% else %}
-        <a href="/login" class="hidden text-sm text-[#94A3B8] hover:text-[#F1F5F9] sm:block">Log in</a>
-        <a href="/register" class="rounded-lg bg-[#06B6D4] px-4 py-2.5 text-sm font-bold text-[#0F172A] hover:bg-[#06B6D4]/90">Register</a>
-      {% endif %}
+
+  <!-- NAVIGATION -->
+  <nav class="relative z-10 max-w-7xl mx-auto px-5 sm:px-8 py-6">
+
+    <div class="flex items-center justify-between">
+
+      <!-- Logo -->
+      <a href="/" class="flex items-center gap-3 group">
+
+        <div class="w-10 h-10 rounded-xl border border-cyan-400/40
+                    bg-cyan-400/5 flex items-center justify-center
+                    group-hover:border-cyan-300 group-hover:bg-cyan-400/10
+                    transition">
+
+          <span class="text-xl">⚡</span>
+
+        </div>
+
+        <div>
+          <div class="text-[20px] text-slate-500 tracking-[0.25em]">
+            PC UPGRADE ADVISOR
+          </div>
+        </div>
+
+      </a>
+
+
+      <!-- Navigation -->
+      <div class="flex items-center gap-3">
+
+        {% if request.session.get("user_id") %}
+
+          <a href="/history"
+             class="hidden sm:block text-sm text-slate-400 hover:text-cyan-300 transition">
+            History
+          </a>
+
+          <a href="/logout"
+             class="text-sm px-4 py-2 rounded-lg border border-red-500/20
+                    bg-red-500/5 text-red-400 hover:bg-red-500/10 transition">
+            Logout
+          </a>
+
+        {% else %}
+
+          <a href="/login"
+             class="text-sm px-4 py-2 rounded-lg border border-slate-700
+                    text-slate-300 hover:border-cyan-500/50
+                    hover:text-cyan-300 transition">
+            Login
+          </a>
+
+          <a href="/register"
+             class="hidden sm:block text-sm px-4 py-2 rounded-lg
+                    bg-cyan-500/10 border border-cyan-400/30
+                    text-cyan-300 hover:bg-cyan-400/20 transition">
+            Register
+          </a>
+
+        {% endif %}
+
+      </div>
+
     </div>
+
   </nav>
-</header>
-<main>
-  <section class="grid-bg relative overflow-hidden">
-    <div class="mx-auto grid max-w-7xl items-center gap-12 px-5 py-20 lg:grid-cols-2 lg:py-28">
-      <div>
-        <p class="mb-6 inline-flex rounded-full border border-[#06B6D4]/20 bg-[#06B6D4]/5 px-3 py-1.5 text-xs font-bold tracking-widest text-[#06B6D4]">HARDWARE ANALYSIS & UPGRADE PLANNING</p>
-        <h1 class="max-w-2xl text-5xl font-black leading-tight tracking-tight sm:text-6xl text-[#F1F5F9]">Make every <span class="gradient-text">upgrade</span> count.</h1>
-        <p class="mt-7 max-w-xl text-lg leading-8 text-[#94A3B8]">Find out what is holding your PC back. Analyze your hardware, check component compatibility, and get upgrade recommendations tailored to your workload and budget.</p>
-        <div class="mt-9 flex flex-wrap gap-3"><a href="/select-platform" class="rounded-xl bg-[#06B6D4] px-6 py-3.5 font-bold text-[#0F172A] hover:bg-[#06B6D4]/90">Analyze my PC →</a><a href="#how-it-works" class="rounded-xl border border-[#334155] px-6 py-3.5 font-semibold text-[#E2E8F0] hover:bg-white/5">See how it works</a></div>
-        <div class="mt-9 flex flex-wrap gap-5 text-sm text-[#94A3B8]"><span>✓ Bottleneck analysis</span><span>✓ Compatibility checks</span><span>✓ Budget-aware suggestions</span></div>
+
+
+  <!-- HERO -->
+  <main class="relative z-10">
+
+    <section class="min-h-[calc(100vh-100px)] flex items-center">
+
+      <div class="max-w-7xl mx-auto w-full px-5 sm:px-8 py-16">
+
+        <div class="max-w-4xl mx-auto text-center">
+
+          <!-- Status -->
+          <div class="inline-flex items-center gap-2 px-4 py-2 mb-8
+                      rounded-full border border-cyan-400/20
+                      bg-cyan-400/5 text-xs text-cyan-300
+                      tracking-widest uppercase">
+
+            <span class="w-2 h-2 rounded-full bg-cyan-400
+                         shadow-[0_0_10px_rgba(34,211,238,0.9)]"></span>
+
+            Upgrade intelligence online
+
+          </div>
+
+
+          <!-- Main title -->
+          <h1 class="text-5xl sm:text-7xl lg:text-8xl
+                     font-black tracking-tight leading-none">
+
+            <span class="block text-white">
+              UPGRADE
+            </span>
+
+            <span class="block text-cyan-400 neon-text">
+              SMARTER.
+            </span>
+
+          </h1>
+
+
+          <p class="max-w-2xl mx-auto mt-7 text-base sm:text-lg
+                    leading-8 text-slate-400">
+
+            Analyze your hardware, detect compatibility issues,
+            find bottlenecks, and discover upgrade options that
+            actually fit your system.
+
+          </p>
+
+
+          <!-- CTA -->
+          <div class="mt-10 flex flex-col sm:flex-row
+                      items-center justify-center gap-4">
+
+            <a href="/devices"
+               class="neon-button group w-full sm:w-auto
+                      inline-flex items-center justify-center gap-3
+                      px-8 py-4 rounded-xl
+                      bg-cyan-500 hover:bg-cyan-400
+                      text-slate-950 font-black
+                      transition-all duration-200">
+
+              <span>START UPGRADE</span>
+
+              <span class="text-xl group-hover:translate-x-1 transition">
+                →
+              </span>
+
+            </a>
+
+
+
+          </div>
+
+
+          <!-- Mini stats -->
+          <div class="mt-16 grid grid-cols-3 max-w-2xl mx-auto
+                      border border-slate-800 rounded-2xl
+                      bg-slate-900/40 backdrop-blur">
+
+            <div class="p-5 border-r border-slate-800">
+              <div class="text-xl sm:text-2xl font-black text-cyan-400">
+                PC
+              </div>
+              <div class="text-[10px] sm:text-xs text-slate-500 mt-1 uppercase tracking-wider">
+                Analysis
+              </div>
+            </div>
+
+            <div class="p-5 border-r border-slate-800">
+              <div class="text-xl sm:text-2xl font-black text-purple-400">
+                AI
+              </div>
+              <div class="text-[10px] sm:text-xs text-slate-500 mt-1 uppercase tracking-wider">
+                Recommendations
+              </div>
+            </div>
+
+            <div class="p-5">
+              <div class="text-xl sm:text-2xl font-black text-emerald-400">
+                24/7
+              </div>
+              <div class="text-[10px] sm:text-xs text-slate-500 mt-1 uppercase tracking-wider">
+                Available
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
       </div>
-      <div class="rounded-3xl border border-[#334155] bg-[#1E293B] p-6 shadow-2xl shadow-black/30 sm:p-8">
-        <p class="text-xs font-bold uppercase tracking-widest text-[#06B6D4]">Interactive preview</p><h2 class="mt-2 text-xl font-bold text-[#F1F5F9]">CPU / GPU balance</h2>
-        <div class="mt-7"><div class="mb-2 flex justify-between text-sm text-[#E2E8F0]"><label for="cpu">CPU benchmark score</label><output id="cpuValue" class="font-mono text-[#06B6D4]">20,000</output></div><input id="cpu" type="range" min="5000" max="60000" step="500" value="20000"></div>
-        <div class="mt-6"><div class="mb-2 flex justify-between text-sm text-[#E2E8F0]"><label for="gpu">GPU benchmark score</label><output id="gpuValue" class="font-mono text-[#3B82F6]">30,000</output></div><input id="gpu" type="range" min="2000" max="45000" step="500" value="30000"></div>
-        <div class="mt-7 rounded-2xl border border-[#334155] bg-[#0F172A] p-5"><div class="flex justify-between text-xs text-[#94A3B8]"><span>CPU-limited</span><span>Balanced</span><span>GPU-limited</span></div><div class="mt-3 flex h-2 overflow-hidden rounded-full"><span class="w-1/3 bg-[#06B6D4]"></span><span class="w-1/3 bg-[#10B981]"></span><span class="w-1/3 bg-amber-400"></span></div><p id="result" aria-live="polite" class="mt-5 text-sm font-semibold leading-6 text-[#E2E8F0]">Your CPU and GPU are relatively balanced.</p><p class="mt-2 text-xs leading-5 text-[#94A3B8]">Illustrative ratio-based demo. Real performance also depends on applications, games, resolution, and system configuration.</p></div>
+
+    </section>
+
+
+    <!-- FEATURES -->
+    <section id="features" class="max-w-7xl mx-auto px-5 sm:px-8 py-24">
+
+      <div class="text-center mb-12">
+
+        <div class="text-xs text-cyan-400 tracking-[0.3em] uppercase mb-3">
+          System capabilities
+        </div>
+
+        <h2 class="text-3xl sm:text-4xl font-black">
+          ONE PLACE. BETTER UPGRADES.
+        </h2>
+
       </div>
-    </div>
-  </section>
-  <section id="features" class="border-y border-[#334155] bg-[#1E293B]/40">
-    <div class="mx-auto max-w-7xl px-5 py-20"><p class="text-sm font-bold uppercase tracking-widest text-[#06B6D4]">What you can do</p><h2 class="mt-3 max-w-2xl text-3xl font-extrabold sm:text-4xl text-[#F1F5F9]">A clearer picture of your next PC upgrade.</h2><p class="mt-4 max-w-2xl leading-7 text-[#94A3B8]">Understand your current setup before spending money on new components.</p>
-      <div class="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        <article class="rounded-2xl border border-[#334155] bg-[#1E293B] p-6"><div class="text-2xl text-[#06B6D4]">⌁</div><h3 class="mt-4 text-lg font-bold text-[#F1F5F9]">Bottleneck analysis</h3><p class="mt-2 text-sm leading-6 text-[#94A3B8]">Compare CPU and GPU benchmark scores to identify potential performance imbalances.</p></article>
-        <article class="rounded-2xl border border-[#334155] bg-[#1E293B] p-6"><div class="text-2xl text-[#3B82F6]">◇</div><h3 class="mt-4 text-lg font-bold text-[#F1F5F9]">Component compatibility</h3><p class="mt-2 text-sm leading-6 text-[#94A3B8]">Check CPU and motherboard socket compatibility and review estimated power requirements.</p></article>
-        <article class="rounded-2xl border border-[#334155] bg-[#1E293B] p-6"><div class="text-2xl text-violet-400">◎</div><h3 class="mt-4 text-lg font-bold text-[#F1F5F9]">Workload-based guidance</h3><p class="mt-2 text-sm leading-6 text-[#94A3B8]">Explore suggestions for gaming, content creation, programming, AI, and different resolutions.</p></article>
-        <article class="rounded-2xl border border-[#334155] bg-[#1E293B] p-6"><div class="text-2xl text-amber-400">₫</div><h3 class="mt-4 text-lg font-bold text-[#F1F5F9]">Budget-aware recommendations</h3><p class="mt-2 text-sm leading-6 text-[#94A3B8]">Set an upgrade budget and review available retail price references in Vietnamese dong (VND).</p></article>
-        <article class="rounded-2xl border border-[#334155] bg-[#1E293B] p-6"><div class="text-2xl text-[#10B981]">▤</div><h3 class="mt-4 text-lg font-bold text-[#F1F5F9]">Accounts & analysis history</h3><p class="mt-2 text-sm leading-6 text-[#94A3B8]">Create an account and revisit or delete previously saved hardware analyses.</p></article>
-        <article class="rounded-2xl border border-[#334155] bg-[#1E293B] p-6"><div class="text-2xl text-[#EF4444]">✉</div><h3 class="mt-4 text-lg font-bold text-[#F1F5F9]">Password recovery</h3><p class="mt-2 text-sm leading-6 text-[#94A3B8]">Reset your password through a one-time email link that expires after 30 minutes.</p></article>
-      </div>
-    </div>
-  </section>
-  <section id="how-it-works" class="mx-auto max-w-7xl px-5 py-20"><div class="text-center"><p class="text-sm font-bold uppercase tracking-widest text-[#06B6D4]">Simple workflow</p><h2 class="mt-3 text-3xl font-extrabold sm:text-4xl text-[#F1F5F9]">From system details to an upgrade plan.</h2></div>
-    <div class="mt-12 grid gap-8 md:grid-cols-3">
-      <article class="border-t-2 border-[#06B6D4] pt-5 bg-[#1E293B] p-6 rounded-2xl border border-[#334155]"><p class="font-mono text-sm text-[#06B6D4]">01 / INPUT</p><h3 class="mt-3 text-xl font-bold text-[#F1F5F9]">Describe your PC</h3><p class="mt-3 text-sm leading-7 text-[#94A3B8]">Choose your CPU, GPU, motherboard, RAM, storage, PSU, resolution, workload, and budget.</p></article>
-      <article class="border-t-2 border-[#3B82F6] pt-5 bg-[#1E293B] p-6 rounded-2xl border border-[#334155]"><p class="font-mono text-sm text-[#3B82F6]">02 / ANALYZE</p><h3 class="mt-3 text-xl font-bold text-[#F1F5F9]">Evaluate your configuration</h3><p class="mt-3 text-sm leading-7 text-[#94A3B8]">Review compatibility, estimated power needs, and hardware benchmark comparisons.</p></article>
-      <article class="border-t-2 border-[#10B981] pt-5 bg-[#1E293B] p-6 rounded-2xl border border-[#334155]"><p class="font-mono text-sm text-[#10B981]">03 / PLAN</p><h3 class="mt-3 text-xl font-bold text-[#F1F5F9]">Review recommendations</h3><p class="mt-3 text-sm leading-7 text-[#94A3B8]">Explore suggested components, estimated performance changes, and available price references.</p></article>
-    </div>
-  </section>
-  <section id="technology" class="border-y border-[#334155] bg-[#1E293B]/40"><div class="mx-auto grid max-w-7xl gap-10 px-5 py-16 lg:grid-cols-2 lg:items-center"><div><p class="text-sm font-bold uppercase tracking-widest text-[#06B6D4]">Under the hood</p><h2 class="mt-3 text-3xl font-extrabold text-[#F1F5F9]">Built with a practical Python stack.</h2><p class="mt-4 text-sm leading-7 text-[#94A3B8]">Hardware data is collected by a scraper and refreshed every seven days while the application scheduler is running. Benchmark coverage is still being expanded, so recommendations should be treated as guidance rather than a guarantee.</p></div><div class="flex flex-wrap gap-3">{% for item in ["Python 3.11", "FastAPI", "SQLAlchemy", "SQLite", "Jinja2", "Tailwind CSS", "APScheduler", "Argon2"] %}<span class="rounded-xl border border-[#334155] bg-[#1E293B] px-4 py-3 text-sm font-semibold text-[#E2E8F0]">{{ item }}</span>{% endfor %}</div></div></section>
-  <section class="mx-auto max-w-5xl px-5 py-20 text-center"><p class="text-sm font-bold uppercase tracking-widest text-[#06B6D4]">Ready when you are</p><h2 class="mt-4 text-3xl font-extrabold sm:text-5xl text-[#F1F5F9]">Know what to upgrade before you buy.</h2><p class="mx-auto mt-5 max-w-2xl leading-7 text-[#94A3B8]">Start with your current configuration and build an upgrade plan around your needs.</p><a href="/select-platform" class="mt-8 inline-flex rounded-xl bg-[#06B6D4] px-7 py-4 font-bold text-[#0F172A] hover:bg-[#06B6D4]/90">Start PC analysis →</a></section>
-</main>
-<footer class="border-t border-[#334155]"><div class="mx-auto flex max-w-7xl flex-col gap-3 px-5 py-8 text-sm text-[#94A3B8] sm:flex-row sm:justify-between"><p>© 2026 PC Upgrade Advisor. Built to make hardware upgrades easier to understand.</p><a href="https://github.com/PQA47/PC-Upgrade-Advisor" target="_blank" rel="noopener noreferrer" class="hover:text-[#06B6D4]">View source code on GitHub ↗</a></div></footer>
-<script>
-(() => {
- const cpu=document.getElementById('cpu'), gpu=document.getElementById('gpu');
- const result=document.getElementById('result'), fmt=n=>Number(n).toLocaleString('en-US');
- function update(){
-  const c=Number(cpu.value),g=Number(gpu.value),r=c/Math.max(g,1);
-  document.getElementById('cpuValue').textContent=fmt(c);
-  document.getElementById('gpuValue').textContent=fmt(g);
-  if(r<.75) result.textContent=`The CPU may be the limiting factor in this simplified comparison (about ${((1-r)*100).toFixed(1)}% below the GPU score).`;
-  else if(r>1.6) result.textContent=`The GPU may be the limiting factor in this simplified comparison (about ${((1-1/r)*100).toFixed(1)}% below the CPU score).`;
-  else result.textContent='Your CPU and GPU are relatively balanced in this simplified comparison.';
- }
- cpu.addEventListener('input',update);gpu.addEventListener('input',update);update();
-})();
-</script>
-</body>
-</html>
+
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+
+        <div class="p-7 rounded-2xl border border-slate-800
