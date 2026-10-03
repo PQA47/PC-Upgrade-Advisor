@@ -1,32 +1,29 @@
-### PC Upgrade Advisor Change Log
+# PC Upgrade Advisor Change Log
 
 ## Main changes
-# Initial Version
 
+### Initial Version
 - added data scraper
 - added main app structure
 
-# Second Version
-
+### Second Version
 - completed main app structure
 - added account system
 
-# Third Version
-
+### Third Version
 - added ui for main app
 - added password recovery system through email
 
-# Fourth Version
-
+### Fourth Version
 - refined main app
 - added landing page
 
-#  Fifth Version
-
+### Fifth Version
 - refined app ui
 - added documentation
 
 ## Bug fixes
+
 - fixed imcompatible components providing a result
 - improved scraper pulling capability 
 - fixed scraper not being able to pull the newest model
