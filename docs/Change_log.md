@@ -25,3 +25,10 @@
 
 - refined app ui
 - added documentation
+
+## Bug fixes
+- fixed imcompatible component providing a result
+- improved scraper pulling capability 
+- fixed scraper not being able to pull the newest model
+- fixed scraper pulling incorrect results
+- fixed scraper not pulling old model prices
