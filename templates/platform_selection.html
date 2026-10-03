@@ -5,8 +5,102 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Choose Platform - PC Upgrade Advisor</title>
   <script src="https://cdn.tailwindcss.com"></script>
+
+  <style id="theme-toggle-styles">
+    /* Light-mode overrides for the existing Tailwind color palette. */
+    html.light-mode body { background-color:#F8FAFC !important; color:#0F172A !important; }
+    html.light-mode [class*="bg-[#0F172A]"] { background-color:#F8FAFC !important; }
+    html.light-mode [class*="bg-[#1E293B]"] { background-color:#FFFFFF !important; }
+    html.light-mode [class*="bg-[#334155]"] { background-color:#E2E8F0 !important; }
+    html.light-mode [class*="bg-[#06B6D4]"] { background-color:#0891B2 !important; }
+    html.light-mode [class*="bg-[#3B82F6]"] { background-color:#2563EB !important; }
+    html.light-mode [class*="text-[#E2E8F0]"] { color:#0F172A !important; }
+    html.light-mode [class*="text-[#F1F5F9]"] { color:#0F172A !important; }
+    html.light-mode [class*="text-[#94A3B8]"] { color:#64748B !important; }
+    html.light-mode [class*="text-[#64748B]"] { color:#475569 !important; }
+    html.light-mode [class*="text-[#0F172A]"] { color:#F8FAFC !important; }
+    html.light-mode [class*="border-[#334155]"] { border-color:#CBD5E1 !important; }
+    html.light-mode [class*="border-[#06B6D4]"] { border-color:#0891B2 !important; }
+    html.light-mode [class*="border-[#3B82F6]"] { border-color:#2563EB !important; }
+    html.light-mode [class*="hover\\:bg-[#334155]"]:hover { background-color:#E2E8F0 !important; }
+    html.light-mode [class*="hover\\:text-[#06B6D4]"]:hover { color:#0891B2 !important; }
+
+    #theme-toggle {
+      position:fixed;
+      top:1rem;
+      right:1rem;
+      z-index:9999;
+      display:inline-flex;
+      align-items:center;
+      gap:.5rem;
+      padding:.55rem .8rem;
+      border:1px solid #334155;
+      border-radius:.8rem;
+      background:#1E293B;
+      color:#E2E8F0;
+      font-size:.8rem;
+      font-weight:700;
+      line-height:1;
+      cursor:pointer;
+      box-shadow:0 8px 24px rgba(15,23,42,.18);
+      transition:background .2s ease,color .2s ease,border-color .2s ease,transform .15s ease;
+    }
+    #theme-toggle:hover { transform:translateY(-1px); }
+    html.light-mode #theme-toggle {
+      background:#FFFFFF;
+      color:#0F172A;
+      border-color:#CBD5E1;
+      box-shadow:0 8px 24px rgba(15,23,42,.10);
+    }
+    #theme-toggle .theme-icon { font-size:1rem; }
+    @media (max-width:640px) {
+      #theme-toggle { top:.75rem; right:.75rem; padding:.5rem .65rem; }
+      #theme-toggle .theme-label { display:none; }
+    }
+  </style>
+  <script>
+    // Apply the saved theme before the page renders to reduce light/dark flicker.
+    (() => {
+      try {
+        if (localStorage.getItem('pc-advisor-theme') === 'light') {
+          document.documentElement.classList.add('light-mode');
+        }
+      } catch (_) {}
+    })();
+  </script>
+
 </head>
-<body class="min-h-screen bg-[#0F172A] text-[#E2E8F0]">
+
+  <button id="theme-toggle" type="button" aria-label="Switch to light mode" title="Switch theme">
+    <span class="theme-icon" aria-hidden="true">☀️</span>
+    <span class="theme-label">Light mode</span>
+  </button>
+  <script>
+    (() => {
+      const root = document.documentElement;
+      const button = document.getElementById('theme-toggle');
+      if (!button) return;
+      const icon = button.querySelector('.theme-icon');
+      const label = button.querySelector('.theme-label');
+
+      const updateThemeButton = () => {
+        const light = root.classList.contains('light-mode');
+        icon.textContent = light ? '🌙' : '☀️';
+        label.textContent = light ? 'Dark mode' : 'Light mode';
+        button.setAttribute('aria-label', light ? 'Switch to dark mode' : 'Switch to light mode');
+      };
+
+      button.addEventListener('click', () => {
+        const light = root.classList.toggle('light-mode');
+        try { localStorage.setItem('pc-advisor-theme', light ? 'light' : 'dark'); } catch (_) {}
+        updateThemeButton();
+      });
+
+      updateThemeButton();
+    })();
+  </script>
+
+  <body class="min-h-screen bg-[#0F172A] text-[#E2E8F0]">
   <div class="min-h-screen flex items-center justify-center px-5 py-12">
     <div class="w-full max-w-4xl">
       <div class="text-center mb-10">
