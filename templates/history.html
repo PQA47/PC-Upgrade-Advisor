@@ -1,10 +1,9 @@
 <!DOCTYPE html>
-<html lang="en" data-bs-theme="dark">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Analysis History - PC Upgrade Advisor</title>
-  <script>if(localStorage.getItem('theme'))document.documentElement.setAttribute('data-bs-theme',localStorage.getItem('theme'));</script>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     [data-bs-theme="light"] body { background: #F8FAFC !important; color: #1E293B !important; }
@@ -22,8 +21,7 @@
         <h1 class="text-3xl font-bold text-[#F1F5F9]">Analysis History</h1>
         <p class="text-[#94A3B8] mt-1">Your saved PC analyses.</p>
       </div>
-      <div class="flex gap-2 items-center">
-        <button id="themeToggle" class="rounded-lg border border-[#334155] bg-[#1E293B] px-3 py-2 text-sm text-[#E2E8F0] hover:bg-[#334155] transition" aria-label="Toggle theme">☀️</button>
+      <div class="flex gap-2">
         <a href="/" class="rounded-xl bg-[#1E293B] border border-[#334155] px-4 py-2 text-sm text-[#E2E8F0] hover:bg-[#334155] transition">Home</a>
         <a href="/logout" class="rounded-xl bg-[#EF4444]/10 border border-[#EF4444]/30 text-[#EF4444] px-4 py-2 text-sm hover:bg-[#EF4444]/20 transition">Logout</a>
       </div>
@@ -66,23 +64,5 @@
       </div>
     {% endif %}
   </div>
-<script>
-(() => {
-  const btn = document.getElementById('themeToggle');
-  if (btn) {
-    const updateIcon = (theme) => {
-      btn.textContent = theme === 'dark' ? '☀️' : '🌙';
-    };
-    updateIcon(document.documentElement.getAttribute('data-bs-theme') || 'dark');
-    btn.addEventListener('click', () => {
-      const current = document.documentElement.getAttribute('data-bs-theme') || 'dark';
-      const next = current === 'dark' ? 'light' : 'dark';
-      document.documentElement.setAttribute('data-bs-theme', next);
-      localStorage.setItem('theme', next);
-      updateIcon(next);
-    });
-  }
-})();
-</script>
 </body>
 </html>

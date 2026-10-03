@@ -1,10 +1,9 @@
 <!DOCTYPE html>
-<html lang="en" data-bs-theme="dark">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Analysis Results - PC Upgrade Advisor</title>
-    <script>if(localStorage.getItem('theme'))document.documentElement.setAttribute('data-bs-theme',localStorage.getItem('theme'));</script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
     [data-bs-theme="light"] body { background: #F8FAFC !important; color: #1E293B !important; }
@@ -18,19 +17,14 @@
 <body class="bg-[#0F172A] text-[#E2E8F0] min-h-screen">
 <div class="max-w-6xl mx-auto px-4 py-8">
 
-    <div class="mb-8 flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-        <div>
-            {% if from_history %}
-            <a href="/history" class="text-[#06B6D4] hover:text-[#06B6D4]/80 text-sm">← Back to history</a>
-            {% else %}
-            <a href="/pc-upgrade" class="text-[#06B6D4] hover:text-[#06B6D4]/80 text-sm">← Back to advisor</a>
-            {% endif %}
-            <h1 class="text-3xl font-bold mt-3 text-[#F1F5F9]">PC Upgrade Analysis</h1>
-            <p class="text-[#94A3B8] mt-1">Technical recommendations are combined with current retail pricing when available.</p>
-        </div>
-        <div>
-            <button id="themeToggle" class="rounded-lg border border-[#334155] bg-[#1E293B] px-3 py-2 text-sm text-[#E2E8F0] hover:bg-[#334155] transition" aria-label="Toggle theme">☀️</button>
-        </div>
+    <div class="mb-8">
+        {% if from_history %}
+        <a href="/history" class="text-[#06B6D4] hover:text-[#06B6D4]/80 text-sm">← Back to history</a>
+        {% else %}
+        <a href="/pc-upgrade" class="text-[#06B6D4] hover:text-[#06B6D4]/80 text-sm">← Back to advisor</a>
+        {% endif %}
+        <h1 class="text-3xl font-bold mt-3 text-[#F1F5F9]">PC Upgrade Analysis</h1>
+        <p class="text-[#94A3B8] mt-1">Technical recommendations are combined with current retail pricing when available.</p>
     </div>
 
     <!-- Current configuration -->
@@ -217,23 +211,5 @@
 </div>
     </div>
 </div>
-<script>
-(() => {
-  const btn = document.getElementById('themeToggle');
-  if (btn) {
-    const updateIcon = (theme) => {
-      btn.textContent = theme === 'dark' ? '☀️' : '🌙';
-    };
-    updateIcon(document.documentElement.getAttribute('data-bs-theme') || 'dark');
-    btn.addEventListener('click', () => {
-      const current = document.documentElement.getAttribute('data-bs-theme') || 'dark';
-      const next = current === 'dark' ? 'light' : 'dark';
-      document.documentElement.setAttribute('data-bs-theme', next);
-      localStorage.setItem('theme', next);
-      updateIcon(next);
-    });
-  }
-})();
-</script>
 </body>
 </html>

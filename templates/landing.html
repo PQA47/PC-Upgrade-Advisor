@@ -1,12 +1,11 @@
 <!DOCTYPE html>
-<html lang="en" data-bs-theme="dark">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Analyze your PC, identify bottlenecks, check compatibility, and plan your next upgrade.">
   <meta name="theme-color" content="#0F172A">
   <title>PC Upgrade Advisor</title>
-  <script>if(localStorage.getItem('theme'))document.documentElement.setAttribute('data-bs-theme',localStorage.getItem('theme'));</script>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     html{scroll-behavior:smooth}body{background:#0F172A;color:#E2E8F0}
@@ -27,7 +26,6 @@
     <a href="/" class="font-bold tracking-tight"><span class="mr-2 rounded-lg bg-[#06B6D4]/10 px-2 py-2 text-[#06B6D4]">PC Upgrade Advisor</span></a>
     <div class="hidden gap-7 text-sm text-[#94A3B8] md:flex"><a href="#features" class="hover:text-[#F1F5F9]">Features</a><a href="#how-it-works" class="hover:text-[#F1F5F9]">How it works</a><a href="#technology" class="hover:text-[#F1F5F9]">Technology</a></div>
     <div class="flex items-center gap-3">
-      <button id="themeToggle" class="rounded-lg border border-[#334155] bg-[#1E293B] px-3 py-2 text-sm text-[#E2E8F0] hover:bg-[#334155] transition" aria-label="Toggle theme">☀️</button>
       {% if request.session.get("user_id") %}
         <span class="text-sm text-[#E2E8F0] whitespace-nowrap"><span class="font-semibold text-[#06B6D4]">{{ request.session.get("username") }}</span></span>
         <a href="/logout" class="rounded-lg border border-[#EF4444]/30 bg-[#EF4444]/10 px-4 py-2.5 text-sm font-semibold text-[#EF4444] hover:bg-[#EF4444]/20">Logout</a>
@@ -45,7 +43,7 @@
         <p class="mb-6 inline-flex rounded-full border border-[#06B6D4]/20 bg-[#06B6D4]/5 px-3 py-1.5 text-xs font-bold tracking-widest text-[#06B6D4]">HARDWARE ANALYSIS & UPGRADE PLANNING</p>
         <h1 class="max-w-2xl text-5xl font-black leading-tight tracking-tight sm:text-6xl text-[#F1F5F9]">Make every <span class="gradient-text">upgrade</span> count.</h1>
         <p class="mt-7 max-w-xl text-lg leading-8 text-[#94A3B8]">Find out what is holding your PC back. Analyze your hardware, check component compatibility, and get upgrade recommendations tailored to your workload and budget.</p>
-        <div class="mt-9 flex flex-wrap gap-3"><a href="/pc-upgrade" class="rounded-xl bg-[#06B6D4] px-6 py-3.5 font-bold text-[#0F172A] hover:bg-[#06B6D4]/90">Analyze my PC →</a><a href="#how-it-works" class="rounded-xl border border-[#334155] px-6 py-3.5 font-semibold text-[#E2E8F0] hover:bg-white/5">See how it works</a></div>
+        <div class="mt-9 flex flex-wrap gap-3"><a href="/select-platform" class="rounded-xl bg-[#06B6D4] px-6 py-3.5 font-bold text-[#0F172A] hover:bg-[#06B6D4]/90">Analyze my PC →</a><a href="#how-it-works" class="rounded-xl border border-[#334155] px-6 py-3.5 font-semibold text-[#E2E8F0] hover:bg-white/5">See how it works</a></div>
         <div class="mt-9 flex flex-wrap gap-5 text-sm text-[#94A3B8]"><span>✓ Bottleneck analysis</span><span>✓ Compatibility checks</span><span>✓ Budget-aware suggestions</span></div>
       </div>
       <div class="rounded-3xl border border-[#334155] bg-[#1E293B] p-6 shadow-2xl shadow-black/30 sm:p-8">
@@ -76,7 +74,7 @@
     </div>
   </section>
   <section id="technology" class="border-y border-[#334155] bg-[#1E293B]/40"><div class="mx-auto grid max-w-7xl gap-10 px-5 py-16 lg:grid-cols-2 lg:items-center"><div><p class="text-sm font-bold uppercase tracking-widest text-[#06B6D4]">Under the hood</p><h2 class="mt-3 text-3xl font-extrabold text-[#F1F5F9]">Built with a practical Python stack.</h2><p class="mt-4 text-sm leading-7 text-[#94A3B8]">Hardware data is collected by a scraper and refreshed every seven days while the application scheduler is running. Benchmark coverage is still being expanded, so recommendations should be treated as guidance rather than a guarantee.</p></div><div class="flex flex-wrap gap-3">{% for item in ["Python 3.11", "FastAPI", "SQLAlchemy", "SQLite", "Jinja2", "Tailwind CSS", "APScheduler", "Argon2"] %}<span class="rounded-xl border border-[#334155] bg-[#1E293B] px-4 py-3 text-sm font-semibold text-[#E2E8F0]">{{ item }}</span>{% endfor %}</div></div></section>
-  <section class="mx-auto max-w-5xl px-5 py-20 text-center"><p class="text-sm font-bold uppercase tracking-widest text-[#06B6D4]">Ready when you are</p><h2 class="mt-4 text-3xl font-extrabold sm:text-5xl text-[#F1F5F9]">Know what to upgrade before you buy.</h2><p class="mx-auto mt-5 max-w-2xl leading-7 text-[#94A3B8]">Start with your current configuration and build an upgrade plan around your needs.</p><a href="/pc-upgrade" class="mt-8 inline-flex rounded-xl bg-[#06B6D4] px-7 py-4 font-bold text-[#0F172A] hover:bg-[#06B6D4]/90">Start PC analysis →</a></section>
+  <section class="mx-auto max-w-5xl px-5 py-20 text-center"><p class="text-sm font-bold uppercase tracking-widest text-[#06B6D4]">Ready when you are</p><h2 class="mt-4 text-3xl font-extrabold sm:text-5xl text-[#F1F5F9]">Know what to upgrade before you buy.</h2><p class="mx-auto mt-5 max-w-2xl leading-7 text-[#94A3B8]">Start with your current configuration and build an upgrade plan around your needs.</p><a href="/select-platform" class="mt-8 inline-flex rounded-xl bg-[#06B6D4] px-7 py-4 font-bold text-[#0F172A] hover:bg-[#06B6D4]/90">Start PC analysis →</a></section>
 </main>
 <footer class="border-t border-[#334155]"><div class="mx-auto flex max-w-7xl flex-col gap-3 px-5 py-8 text-sm text-[#94A3B8] sm:flex-row sm:justify-between"><p>© 2026 PC Upgrade Advisor. Built to make hardware upgrades easier to understand.</p><a href="https://github.com/PQA47/PC-Upgrade-Advisor" target="_blank" rel="noopener noreferrer" class="hover:text-[#06B6D4]">View source code on GitHub ↗</a></div></footer>
 <script>
@@ -92,24 +90,6 @@
   else result.textContent='Your CPU and GPU are relatively balanced in this simplified comparison.';
  }
  cpu.addEventListener('input',update);gpu.addEventListener('input',update);update();
-})();
-</script>
-<script>
-(() => {
-  const btn = document.getElementById('themeToggle');
-  if (btn) {
-    const updateIcon = (theme) => {
-      btn.textContent = theme === 'dark' ? '☀️' : '🌙';
-    };
-    updateIcon(document.documentElement.getAttribute('data-bs-theme') || 'dark');
-    btn.addEventListener('click', () => {
-      const current = document.documentElement.getAttribute('data-bs-theme') || 'dark';
-      const next = current === 'dark' ? 'light' : 'dark';
-      document.documentElement.setAttribute('data-bs-theme', next);
-      localStorage.setItem('theme', next);
-      updateIcon(next);
-    });
-  }
 })();
 </script>
 </body>
