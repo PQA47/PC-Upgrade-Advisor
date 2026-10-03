@@ -1,10 +1,24 @@
+## Introduction
+
+PC Upgrade Advisor is a web application for evaluating current PC hardware, comparing benchmark scores, checking compatibility, and recommending practical upgrade paths based on performance and budget.
+
+The app helps users:
+
+- analyze their existing CPU, GPU, and motherboard setup
+- compare hardware against benchmark data and retail pricing
+- detect compatibility issues and performance bottlenecks
+- receive upgrade recommendations tailored to their current configuration
+- save analysis history and revisit previous results with an account
+
+This project is built with Python and FastAPI, and it uses a local SQLite database with synchronized hardware and pricing data.
+
 ## Installation & Setup
 
 ### 1. Clone the repository
 
 ```powershell
-git clone https://github.com/PQA47/PC_UPGRADE.git
-cd PC_UPGRADE
+git clone https://github.com/PQA47/PC-Upgrade-Advisor
+cd PC-Upgrade-Advisor
 ```
 
 If you are using a different branch:
