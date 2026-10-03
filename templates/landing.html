@@ -132,10 +132,10 @@
 
 
 <style id="square-ui-overrides">
-/* Global square-corner UI: intentionally removes all rounded corners. */
-*, *::before, *::after {
-  border-radius: 0 !important;
-}
+  /* Square UI: intentionally remove every rounded corner. */
+  *, *::before, *::after { border-radius: 0 !important; }
+  /* Keep the page background behind all content. */
+  html, body { min-height: 100%; }
 </style>
 </head>
 
@@ -245,7 +245,7 @@
           <h1 class="text-5xl sm:text-7xl lg:text-8xl
                      font-black tracking-tight leading-none">
 
-            <span class="block text-white-400">
+            <span class="block text-white">
               UPGRADE
             </span>
 

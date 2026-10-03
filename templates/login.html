@@ -103,10 +103,10 @@
 
 
 <style id="square-ui-overrides">
-/* Global square-corner UI: intentionally removes all rounded corners. */
-*, *::before, *::after {
-  border-radius: 0 !important;
-}
+  /* Square UI: intentionally remove every rounded corner. */
+  *, *::before, *::after { border-radius: 0 !important; }
+  /* Keep the page background behind all content. */
+  html, body { min-height: 100%; }
 </style>
 </head>
 
@@ -303,7 +303,7 @@
 
                     <div>
 
-                        <label for="email"
+                        <label for="identifier"
                                class="block
                                       text-xs
                                       font-bold
@@ -312,17 +312,17 @@
                                       text-slate-400
                                       mb-2">
 
-                            Email
+                            Username or Email
 
                         </label>
 
                         <input
-                            id="email"
-                            name="email"
-                            type="email"
-                            autocomplete="email"
+                            id="identifier"
+                            name="identifier"
+                            type="text"
+                            autocomplete="username"
                             required
-                            placeholder="you@example.com"
+                            placeholder="Username or email"
                             class="input-field
                                    w-full
                                    rounded-xl
@@ -430,7 +430,7 @@
                                      text-xs
                                      text-slate-600">
 
-                            <span style="color: cyan;">Don't have an account?</span>
+                            NEW TO GearUp?
 
                         </span>
 
@@ -474,6 +474,5 @@
         </div>
 
     </main>
-
 </body>
 </html>

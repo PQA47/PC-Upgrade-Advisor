@@ -101,12 +101,21 @@ def login_page(request: Request):
 @router.post("/login", response_class=HTMLResponse)
 def login(
     request: Request,
-    username: str = Form(...),
+    identifier: str = Form(...),
     password: str = Form(...),
 ):
     db = SessionLocal()
     try:
-        user = db.query(User).filter(User.username == username.strip()).first()
+        # Login accepts either the username or the registered email.
+        identifier = identifier.strip()
+        user = (
+            db.query(User)
+            .filter(
+                (User.username == identifier)
+                | (User.email == identifier.lower())
+            )
+            .first()
+        )
 
         if not user or not verify_password(password, user.password_hash):
             return request.app.state.templates.TemplateResponse(
