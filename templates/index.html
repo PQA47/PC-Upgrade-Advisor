@@ -1,10 +1,9 @@
 <!DOCTYPE html>
-<html lang="en" data-bs-theme="dark">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Analyze - PC Upgrade Advisor</title>
-  <script>if(localStorage.getItem('theme'))document.documentElement.setAttribute('data-bs-theme',localStorage.getItem('theme'));</script>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-[#0F172A] text-[#E2E8F0] min-h-screen py-10 px-4">
@@ -17,7 +16,6 @@
         <p class="text-[#94A3B8] text-sm mt-1">System for analyzing hardware configurations, identifying bottlenecks, and giving smart upgrade recommendations.</p>
       </div>
       <div class="ml-auto flex items-center justify-end gap-3 flex-wrap">
-        <button id="themeToggle" class="rounded-lg border border-[#334155] bg-[#1E293B] px-3 py-2 text-sm text-[#E2E8F0] hover:bg-[#334155] transition" aria-label="Toggle theme">☀️</button>
         {% if request.session.get("user_id") %}
           <span class="text-sm text-[#E2E8F0] whitespace-nowrap">
             Hi, <span class="text-[#06B6D4] font-semibold">{{ request.session.get("username") }}</span>
@@ -57,55 +55,74 @@
     <!-- Main form -->
     <div class="bg-[#1E293B] border border-[#334155] rounded-2xl p-6 sm:p-8 shadow-2xl">
       <form action="/analyze" method="POST" class="space-y-8">
+        <input type="hidden" name="platform" value="{{ platform }}">
+        <div class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#334155] bg-[#0F172A]/70 px-4 py-3">
+          <div>
+            <p class="text-xs uppercase tracking-widest text-[#64748B]">Selected platform</p>
+            <p class="mt-1 font-bold text-[#F1F5F9]">{{ platform|upper }}</p>
+          </div>
+          <a href="/select-platform" class="text-sm font-semibold text-[#06B6D4] hover:underline">Change platform</a>
+        </div>
 
         <!-- SECTION 1: CURRENT HARDWARE CONFIGURATION -->
         <div>
           <div class="flex items-center gap-2 mb-4 pb-2 border-b border-[#334155]">
             <span class="w-6 h-6 rounded-full bg-[#06B6D4]/20 text-[#06B6D4] flex items-center justify-center text-xs font-bold">1</span>
-            <h2 class="text-lg font-semibold text-[#F1F5F9]">Current hardware configuration (search-enabled)</h2>
+            <h2 class="text-lg font-semibold text-[#F1F5F9]">Current hardware configuration</h2>
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <!-- CPU Search -->
+            <!-- CPU -->
             <div>
               <label class="block text-sm font-medium text-[#E2E8F0] mb-1.5">
-                Processor (CPU) <span class="text-xs text-[#06B6D4] font-normal">(Type chip model)</span>
+                Processor (CPU)
               </label>
-              <input list="cpu_list" name="cpu_name" placeholder="Try: i5-12400F, Ryzen 5 5600X, 14700K..." required autocomplete="off"
-                     class="w-full bg-[#0F172A] border border-[#334155] rounded-xl p-3 text-[#E2E8F0] placeholder-[#94A3B8] focus:outline-none focus:border-[#06B6D4] transition text-sm">
-              <datalist id="cpu_list">
+              <select id="cpuSelect" name="cpu_name" required
+                      class="w-full bg-[#0F172A] border border-[#334155] rounded-xl p-3 text-[#E2E8F0] focus:outline-none focus:border-[#06B6D4] transition text-sm">
+                <option value="">Select a CPU...</option>
                 {% for c in cpus %}
-                  <option value="{{ c.name }}">Socket: {{ c.socket }} | {{ c.cores }} cores | Score: {{ c.score }}</option>
+                  <option value="{{ c.name }}" data-socket="{{ c.socket }}">
+                    {{ c.name }} — {{ c.socket }} — {{ c.cores }} cores — Score {{ c.score }}
+                  </option>
                 {% endfor %}
-              </datalist>
+              </select>
+              <p class="text-xs text-[#64748B] mt-1.5">{{ platform|upper }} CPUs are pre-filtered.</p>
             </div>
 
-            <!-- Mainboard Search -->
+            <!-- Mainboard -->
             <div>
               <label class="block text-sm font-medium text-[#E2E8F0] mb-1.5">
-                Motherboard <span class="text-xs text-[#06B6D4] font-normal">(Type board model)</span>
+                Motherboard
               </label>
-              <input list="mb_list" name="mb_name" placeholder="Try: B760, B550, Z790, Tomahawk, TUF..." required autocomplete="off"
-                     class="w-full bg-[#0F172A] border border-[#334155] rounded-xl p-3 text-[#E2E8F0] placeholder-[#94A3B8] focus:outline-none focus:border-[#06B6D4] transition text-sm">
-              <datalist id="mb_list">
+              <select id="mbSelect" name="mb_name" required
+                      class="w-full bg-[#0F172A] border border-[#334155] rounded-xl p-3 text-[#E2E8F0] focus:outline-none focus:border-[#06B6D4] transition text-sm">
+                <option value="">Select a compatible motherboard...</option>
                 {% for m in motherboards %}
-                  <option value="{{ m.name }}">Socket: {{ m.socket }} | RAM standard: {{ m.ram_type }}</option>
+                  <option value="{{ m.name }}" data-socket="{{ m.socket }}">
+                    {{ m.name }} — {{ m.socket }} — {{ m.ram_type }}
+                  </option>
                 {% endfor %}
-              </datalist>
+              </select>
+              <p id="mbFilterStatus" class="text-xs text-[#64748B] mt-1.5">
+                Select a CPU to filter motherboards by socket.
+              </p>
             </div>
 
-            <!-- GPU Search -->
+            <!-- GPU -->
             <div>
               <label class="block text-sm font-medium text-[#E2E8F0] mb-1.5">
-                Graphics card (GPU) <span class="text-xs text-[#06B6D4] font-normal">(Type GPU model)</span>
+                Graphics card (GPU)
               </label>
-              <input list="gpu_list" name="gpu_name" placeholder="Try: RTX 3060, RTX 4070, RX 6600..." required autocomplete="off"
-                     class="w-full bg-[#0F172A] border border-[#334155] rounded-xl p-3 text-[#E2E8F0] placeholder-[#94A3B8] focus:outline-none focus:border-[#06B6D4] transition text-sm">
-              <datalist id="gpu_list">
+              <select id="gpuSelect" name="gpu_name" required
+                      class="w-full bg-[#0F172A] border border-[#334155] rounded-xl p-3 text-[#E2E8F0] focus:outline-none focus:border-[#06B6D4] transition text-sm">
+                <option value="">Select a GPU...</option>
                 {% for g in gpus %}
-                  <option value="{{ g.name }}">{{ g.vram }}GB VRAM | TDP {{ g.tdp }}W | Score: {{ g.score }}</option>
+                  <option value="{{ g.name }}">
+                    {{ g.name }} — {{ g.vram }}GB VRAM — TDP {{ g.tdp }}W — Score {{ g.score }}
+                  </option>
                 {% endfor %}
-              </datalist>
+              </select>
+              <p class="text-xs text-[#64748B] mt-1.5">GPU selection is kept compatible with the selected configuration.</p>
             </div>
 
             <!-- Upgrade budget -->
@@ -197,23 +214,59 @@
     </div>
 
   </div>
+
 <script>
-(() => {
-  const btn = document.getElementById('themeToggle');
-  if (btn) {
-    const updateIcon = (theme) => {
-      btn.textContent = theme === 'dark' ? '☀️' : '🌙';
-    };
-    updateIcon(document.documentElement.getAttribute('data-bs-theme') || 'dark');
-    btn.addEventListener('click', () => {
-      const current = document.documentElement.getAttribute('data-bs-theme') || 'dark';
-      const next = current === 'dark' ? 'light' : 'dark';
-      document.documentElement.setAttribute('data-bs-theme', next);
-      localStorage.setItem('theme', next);
-      updateIcon(next);
+(function () {
+  const cpu = document.getElementById("cpuSelect");
+  const mb = document.getElementById("mbSelect");
+  const status = document.getElementById("mbFilterStatus");
+  if (!cpu || !mb || !status) return;
+
+  const motherboardOptions = Array.from(mb.options).map(option => ({
+    element: option,
+    value: option.value,
+    socket: (option.dataset.socket || "").trim().toLowerCase()
+  }));
+
+  function filterMotherboards() {
+    const selectedCpu = cpu.options[cpu.selectedIndex];
+    const socket = selectedCpu ? (selectedCpu.dataset.socket || "").trim() : "";
+    const normalizedSocket = socket.toLowerCase();
+    const current = mb.value;
+
+    motherboardOptions.forEach(item => {
+      if (!item.value) {
+        item.element.hidden = false;
+        item.element.disabled = false;
+        return;
+      }
+      const compatible = normalizedSocket && item.socket === normalizedSocket;
+      item.element.hidden = !compatible;
+      item.element.disabled = !compatible;
     });
+
+    if (!socket) {
+      mb.value = "";
+      status.textContent = "Select a CPU first. Compatible motherboards will appear automatically.";
+      status.className = "text-xs text-[#64748B] mt-1.5";
+      return;
+    }
+
+    const compatible = motherboardOptions.filter(x => x.value && x.socket === normalizedSocket);
+    if (!compatible.some(x => x.value === current)) mb.value = "";
+
+    status.textContent = compatible.length
+      ? `${compatible.length} compatible motherboard(s) for ${socket}.`
+      : `No motherboard with ${socket} is currently available in the database.`;
+    status.className = compatible.length
+      ? "text-xs text-emerald-400 mt-1.5"
+      : "text-xs text-amber-400 mt-1.5";
   }
+
+  cpu.addEventListener("change", filterMotherboards);
+  filterMotherboards();
 })();
 </script>
+
 </body>
 </html>

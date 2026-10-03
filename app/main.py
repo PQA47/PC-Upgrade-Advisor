@@ -1,6 +1,6 @@
 from pathlib import Path
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Query
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
 import os
@@ -97,14 +97,54 @@ def device_selection(request: Request):
         context={"request": request}
     )
 
+@app.get("/select-platform")
+def select_platform(request: Request):
+    """Let the user choose Intel or AMD before entering the PC configuration form."""
+    return templates.TemplateResponse(
+        request=request,
+        name="platform_selection.html",
+        context={"request": request}
+    )
+
+
 @app.get("/pc-upgrade")
-def pc_upgrade(request: Request):
-    """PC upgrade form: load all components from SQLite and render them into the search form."""
+def pc_upgrade(request: Request, platform: str = Query("intel")):
+    """Render the PC form with CPU/motherboard data pre-filtered by platform."""
+    platform = (platform or "intel").lower().strip()
+    if platform not in {"intel", "amd"}:
+        platform = "intel"
+
     db = SessionLocal()
     try:
-        cpus = db.query(CPU).order_by(CPU.score.desc()).all()
+        if platform == "intel":
+            # Intel desktop sockets currently represented in the database.
+            cpus = (
+                db.query(CPU)
+                .filter(CPU.socket.like("LGA%"))
+                .order_by(CPU.score.desc())
+                .all()
+            )
+            mbs = (
+                db.query(Motherboard)
+                .filter(Motherboard.socket.like("LGA%"))
+                .order_by(Motherboard.name.asc())
+                .all()
+            )
+        else:
+            cpus = (
+                db.query(CPU)
+                .filter(CPU.socket.like("AM%"))
+                .order_by(CPU.score.desc())
+                .all()
+            )
+            mbs = (
+                db.query(Motherboard)
+                .filter(Motherboard.socket.like("AM%"))
+                .order_by(Motherboard.name.asc())
+                .all()
+            )
+
         gpus = db.query(GPU).order_by(GPU.score.desc()).all()
-        mbs = db.query(Motherboard).order_by(Motherboard.name.asc()).all()
 
         return templates.TemplateResponse(
             request=request,
@@ -112,7 +152,8 @@ def pc_upgrade(request: Request):
             context={
                 "cpus": cpus,
                 "gpus": gpus,
-                "motherboards": mbs
+                "motherboards": mbs,
+                "platform": platform
             }
         )
     finally:
