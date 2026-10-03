@@ -21,6 +21,9 @@
   </style>
 </head>
 <body class="min-h-screen text-[#E2E8F0] antialiased">
+<button id="theme-toggle" type="button" aria-label="Switch to light mode" class="fixed bottom-4 right-4 z-50 rounded-xl border border-[#334155] bg-[#1E293B] px-4 py-2 text-sm font-medium text-[#E2E8F0] shadow-lg transition hover:border-[#06B6D4] focus:outline-none focus:ring-2 focus:ring-[#06B6D4]">
+  Switch to light mode
+</button>
 <header class="sticky top-0 z-20 border-b border-[#334155] bg-[#0F172A]/90 backdrop-blur">
   <nav class="mx-auto flex max-w-7xl items-center justify-between px-5 py-4" aria-label="Main navigation">
     <a href="/" class="font-bold tracking-tight"><span class="mr-2 rounded-lg bg-[#06B6D4]/10 px-2 py-2 text-[#06B6D4]">PC Upgrade Advisor</span></a>
@@ -91,6 +94,20 @@
  }
  cpu.addEventListener('input',update);gpu.addEventListener('input',update);update();
 })();
+</script>
+<script>
+  const themeToggle = document.getElementById("theme-toggle");
+  function setTheme(theme) {
+    document.documentElement.setAttribute("data-bs-theme", theme);
+    const nextTheme = theme === "dark" ? "light" : "dark";
+    themeToggle.textContent = `Switch to ${nextTheme} mode`;
+    themeToggle.setAttribute("aria-label", `Switch to ${nextTheme} mode`);
+    localStorage.setItem("theme", theme);
+  }
+  setTheme(localStorage.getItem("theme") || "dark");
+  themeToggle.addEventListener("click", () => {
+    setTheme(document.documentElement.getAttribute("data-bs-theme") === "dark" ? "light" : "dark");
+  });
 </script>
 </body>
 </html>
